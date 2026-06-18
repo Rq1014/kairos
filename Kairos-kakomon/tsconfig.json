@@ -1,0 +1,29 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.d.ts",
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
+  ],
+  "exclude": [
+    "backend/**",
+    "**/backend/**",
+    "prototype/**",
+    "**/prototype/**",
+    "kairos-kakomon-extracted/**",
+    "**/kairos-kakomon-extracted/**",
+    "Kairos-kakomon/**",
+    "**/Kairos-kakomon/**",
+    "node_modules/**"
+  ]
+}

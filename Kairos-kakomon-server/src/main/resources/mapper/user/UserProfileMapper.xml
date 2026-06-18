@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.user.UserProfileMapper">
+
+    <resultMap id="UserProfileMap" type="org.example.kairos.entity.UserProfileEntity">
+        <id column="user_id" property="userId"/>
+        <result column="nickname" property="nickname"/>
+        <result column="bio" property="bio"/>
+        <result column="avatar_url" property="avatarUrl"/>
+        <result column="avatar_color" property="avatarColor"/>
+        <result column="major" property="major"/>
+        <result column="selected_major_code" property="selectedMajorCode"/>
+        <result column="next_exam_name" property="nextExamName"/>
+        <result column="next_exam_date" property="nextExamDate"/>
+        <result column="next_exam_duration" property="nextExamDuration"/>
+        <result column="is_pro" property="isPro"/>
+        <result column="free_ai_remaining" property="freeAiRemaining"/>
+        <result column="token_balance" property="tokenBalance"/>
+        <result column="solved_count" property="solvedCount"/>
+        <result column="unclear_count" property="unclearCount"/>
+        <result column="wrong_count" property="wrongCount"/>
+        <result column="favorite_count" property="favoriteCount"/>
+        <result column="ai_ask_count" property="aiAskCount"/>
+        <result column="contributor_points" property="contributorPoints"/>
+        <result column="onboarding_completed" property="onboardingCompleted"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="org.example.kairos.entity.UserProfileEntity">
+        INSERT INTO user_profile (
+            user_id, nickname, bio, avatar_url, avatar_color, major, selected_major_code,
+            next_exam_name, next_exam_date, next_exam_duration, is_pro, free_ai_remaining,
+            token_balance, solved_count, unclear_count, wrong_count, favorite_count,
+            ai_ask_count, contributor_points, onboarding_completed
+        ) VALUES (
+            #{userId}, #{nickname},
+            #{bio}, #{avatarUrl}, #{avatarColor}, #{major}, #{selectedMajorCode},
+            #{nextExamName}, #{nextExamDate}, #{nextExamDuration},
+            COALESCE(#{isPro}, 0), COALESCE(#{freeAiRemaining}, 1),
+            COALESCE(#{tokenBalance}, 0), COALESCE(#{solvedCount}, 0),
+            COALESCE(#{unclearCount}, 0), COALESCE(#{wrongCount}, 0),
+            COALESCE(#{favoriteCount}, 0), COALESCE(#{aiAskCount}, 0),
+            COALESCE(#{contributorPoints}, 0), COALESCE(#{onboardingCompleted}, 0)
+        )
+    </insert>
+
+    <select id="findByUserId" resultMap="UserProfileMap">
+        SELECT * FROM user_profile WHERE user_id = #{userId}
+    </select>
+
+    <update id="update" parameterType="org.example.kairos.entity.UserProfileEntity">
+        UPDATE user_profile
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="bio != null">bio = #{bio},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="avatarColor != null">avatar_color = #{avatarColor},</if>
+            <if test="major != null">major = #{major},</if>
+            <if test="selectedMajorCode != null">selected_major_code = #{selectedMajorCode},</if>
+            <if test="nextExamName != null">next_exam_name = #{nextExamName},</if>
+            <if test="nextExamDate != null">next_exam_date = #{nextExamDate},</if>
+            <if test="nextExamDuration != null">next_exam_duration = #{nextExamDuration},</if>
+            <if test="isPro != null">is_pro = #{isPro},</if>
+            <if test="freeAiRemaining != null">free_ai_remaining = #{freeAiRemaining},</if>
+            <if test="tokenBalance != null">token_balance = #{tokenBalance},</if>
+            <if test="solvedCount != null">solved_count = #{solvedCount},</if>
+            <if test="unclearCount != null">unclear_count = #{unclearCount},</if>
+            <if test="wrongCount != null">wrong_count = #{wrongCount},</if>
+            <if test="favoriteCount != null">favorite_count = #{favoriteCount},</if>
+            <if test="aiAskCount != null">ai_ask_count = #{aiAskCount},</if>
+            <if test="contributorPoints != null">contributor_points = #{contributorPoints},</if>
+            <if test="onboardingCompleted != null">onboarding_completed = #{onboardingCompleted},</if>
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+
+    <delete id="deleteByUserId">
+        DELETE FROM user_profile WHERE user_id = #{userId}
+    </delete>
+</mapper>

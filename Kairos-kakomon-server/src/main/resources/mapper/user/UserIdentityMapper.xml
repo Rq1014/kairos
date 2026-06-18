@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.user.UserIdentityMapper">
+
+    <resultMap id="UserIdentityMap" type="org.example.kairos.entity.UserIdentityEntity">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="identity_type" property="identityType"/>
+        <result column="identity_value" property="identityValue"/>
+        <result column="verified" property="verified"/>
+        <result column="is_primary" property="isPrimary"/>
+        <result column="bound_at" property="boundAt"/>
+        <result column="last_login_at" property="lastLoginAt"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="org.example.kairos.entity.UserIdentityEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_identity (user_id, identity_type, identity_value, verified, is_primary)
+        VALUES (#{userId}, #{identityType}, #{identityValue}, #{verified}, #{isPrimary})
+    </insert>
+
+    <select id="findByTypeAndValue" resultMap="UserIdentityMap">
+        SELECT * FROM user_identity
+        WHERE identity_type = #{identityType} AND identity_value = #{identityValue}
+        LIMIT 1
+    </select>
+
+    <select id="findByUserId" resultMap="UserIdentityMap">
+        SELECT * FROM user_identity WHERE user_id = #{userId}
+    </select>
+
+    <select id="findByUserIdAndType" resultMap="UserIdentityMap">
+        SELECT * FROM user_identity
+        WHERE user_id = #{userId} AND identity_type = #{identityType}
+        LIMIT 1
+    </select>
+
+    <delete id="deleteByUserIdAndType">
+        DELETE FROM user_identity
+        WHERE user_id = #{userId} AND identity_type = #{identityType}
+    </delete>
+
+    <delete id="deleteAllByUserId">
+        DELETE FROM user_identity WHERE user_id = #{userId}
+    </delete>
+
+    <update id="updateLastLoginAt">
+        UPDATE user_identity SET last_login_at = CURRENT_TIMESTAMP(3) WHERE id = #{id}
+    </update>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*) FROM user_identity WHERE user_id = #{userId}
+    </select>
+</mapper>

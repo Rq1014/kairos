@@ -1,0 +1,90 @@
+spring:
+  application:
+    name: Kairos-kakomon-server
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.mongodb.autoconfigure.MongoAutoConfiguration
+      - org.springframework.boot.mongodb.autoconfigure.MongoReactiveAutoConfiguration
+      - org.springframework.boot.data.mongodb.autoconfigure.DataMongoAutoConfiguration
+      - org.springframework.boot.elasticsearch.autoconfigure.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.elasticsearch.autoconfigure.ElasticsearchRestClientAutoConfiguration
+      - org.springframework.boot.data.elasticsearch.autoconfigure.DataElasticsearchAutoConfiguration
+  datasource:
+    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:kakomon}?useSSL=false&useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Tokyo&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 3000
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+  mail:
+    host: smtp.example.com
+    port: 587
+    username:
+    password:
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+server:
+  port: 8080
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: org.example.kairos.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+logging:
+  level:
+    org.example.kairos: INFO
+    org.example.kairos.mapper: DEBUG
+
+
+auth:
+  jwt:
+    secret: ${JWT_SECRET:kakomon-please-change-me-in-production-32bytes-min-length}
+    access-ttl-seconds: 2592000
+    refresh-ttl-seconds: 2592000
+    issuer: kakomon
+  password:
+    bcrypt-strength: 10
+    max-failed-count: 5
+    lock-minutes: 10
+  verify-code:
+    length: 6
+    ttl-seconds: 300
+    cooldown-seconds: 60
+    daily-limit-per-identity: 10
+    daily-limit-per-ip: 100
+  rate-limit:
+    default-per-minute: 60
+    verify-code-per-minute: 5
+
+sms:
+  provider: log
+  signature: 過去問
+
+mail:
+  from: noreply@kakomon.app

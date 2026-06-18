@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.user.UserTargetSchoolMapper">
+
+    <resultMap id="TargetSchoolMap" type="org.example.kairos.entity.UserTargetSchoolEntity">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="university_code" property="universityCode"/>
+        <result column="school_type" property="schoolType"/>
+        <result column="grad_school_code" property="gradSchoolCode"/>
+        <result column="major_code" property="majorCode"/>
+        <result column="subjects" property="subjects"/>
+        <result column="priority" property="priority"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="org.example.kairos.entity.UserTargetSchoolEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_target_school (
+            user_id, university_code, school_type, grad_school_code, major_code, subjects, priority
+        ) VALUES (
+            #{userId}, #{universityCode}, #{schoolType}, #{gradSchoolCode}, #{majorCode}, #{subjects}, #{priority}
+        )
+    </insert>
+
+    <insert id="batchInsert">
+        INSERT INTO user_target_school (
+            user_id, university_code, school_type, grad_school_code, major_code, subjects, priority
+        ) VALUES
+        <foreach collection="list" item="it" separator=",">
+            (#{it.userId}, #{it.universityCode}, #{it.schoolType}, #{it.gradSchoolCode}, #{it.majorCode}, #{it.subjects}, #{it.priority})
+        </foreach>
+    </insert>
+
+    <select id="findByUserId" resultMap="TargetSchoolMap">
+        SELECT * FROM user_target_school WHERE user_id = #{userId} ORDER BY priority ASC, id ASC
+    </select>
+
+    <delete id="deleteByUserId">
+        DELETE FROM user_target_school WHERE user_id = #{userId}
+    </delete>
+</mapper>

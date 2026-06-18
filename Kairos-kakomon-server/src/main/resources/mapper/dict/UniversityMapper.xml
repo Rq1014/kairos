@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.dict.UniversityMapper">
+
+    <resultMap id="UniMap" type="org.example.kairos.entity.UniversityEntity">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="name_cn" property="nameCn"/>
+        <result column="name_jp" property="nameJp"/>
+        <result column="name_en" property="nameEn"/>
+        <result column="short_name" property="shortName"/>
+        <result column="type" property="type"/>
+        <result column="region" property="region"/>
+        <result column="region_group" property="regionGroup"/>
+        <result column="status" property="status"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findByCode" resultMap="UniMap">
+        SELECT * FROM university WHERE code = #{code} AND status = 1
+    </select>
+
+    <select id="findAll" resultMap="UniMap">
+        SELECT * FROM university WHERE status = 1 ORDER BY sort_order DESC, id ASC
+    </select>
+
+    <sql id="filter">
+        <where>
+            status = 1
+            <if test="regionGroup != null and regionGroup != ''">AND region_group = #{regionGroup}</if>
+            <if test="type != null and type != ''">AND type = #{type}</if>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    name_cn LIKE CONCAT('%', #{keyword}, '%')
+                    OR name_jp LIKE CONCAT('%', #{keyword}, '%')
+                    OR name_en LIKE CONCAT('%', #{keyword}, '%')
+                    OR short_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR code LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="findByFilter" resultMap="UniMap">
+        SELECT * FROM university
+        <include refid="filter"/>
+        ORDER BY sort_order DESC, id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByFilter" resultType="long">
+        SELECT COUNT(*) FROM university
+        <include refid="filter"/>
+    </select>
+
+    <select id="existsByCode" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM university WHERE code = #{code} AND status = 1
+    </select>
+</mapper>

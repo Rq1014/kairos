@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.user.UserMapper">
+
+    <resultMap id="UserResultMap" type="org.example.kairos.entity.UserEntity">
+        <id column="id" property="id"/>
+        <result column="user_no" property="userNo"/>
+        <result column="status" property="status"/>
+        <result column="register_from" property="registerFrom"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted_at" property="deletedAt"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="org.example.kairos.entity.UserEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `user` (user_no, status, register_from)
+        VALUES (#{userNo}, #{status}, #{registerFrom})
+    </insert>
+
+    <select id="findById" resultMap="UserResultMap">
+        SELECT * FROM `user` WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <select id="findByUserNo" resultMap="UserResultMap">
+        SELECT * FROM `user` WHERE user_no = #{userNo} AND deleted_at IS NULL
+    </select>
+
+    <update id="updateStatus">
+        UPDATE `user` SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <update id="softDelete">
+        UPDATE `user`
+        SET status = 3,
+            deleted_at = CURRENT_TIMESTAMP(3),
+            updated_at = CURRENT_TIMESTAMP(3)
+        WHERE id = #{id} AND deleted_at IS NULL
+    </update>
+</mapper>

@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Kakomon",
+    "slug": "kairos-kakomon",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "kakomon",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "bundleIdentifier": "com.kairos.kakomon",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "用于扫描上传过去问原图",
+        "NSPhotoLibraryUsageDescription": "用于上传参考书页面照片"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": true
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.dict.MajorMapper">
+
+    <resultMap id="MajorMap" type="org.example.kairos.entity.MajorEntity">
+        <id column="id" property="id"/>
+        <result column="university_id" property="universityId"/>
+        <result column="grad_school_id" property="gradSchoolId"/>
+        <result column="code" property="code"/>
+        <result column="label" property="label"/>
+        <result column="short" property="shortName"/>
+        <result column="description" property="description"/>
+        <result column="subjects" property="subjects"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findByGradSchoolId" resultMap="MajorMap">
+        SELECT * FROM major WHERE grad_school_id = #{gradSchoolId} AND status = 1
+        ORDER BY sort_order DESC, id ASC
+    </select>
+
+    <select id="findAll" resultMap="MajorMap">
+        SELECT * FROM major WHERE status = 1 ORDER BY university_id, grad_school_id, sort_order DESC, id ASC
+    </select>
+
+    <select id="findByGradSchoolIdAndCode" resultMap="MajorMap">
+        SELECT * FROM major
+        WHERE grad_school_id = #{gradSchoolId} AND code = #{code} AND status = 1
+    </select>
+</mapper>

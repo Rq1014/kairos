@@ -1,0 +1,33 @@
+# 原始压缩包（大文件，冗余）
+*.zip
+
+# 解压目录（内容与根目录重复）
+kairos-kakomon-extracted/
+
+# Claude Code 本地配置（非项目文件）
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node（工程化后生成）
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Env（包含密钥，不提交）
+.env
+.env.production
+.env.staging
+.env.development
+
+# EAS
+.easignore
+
+# 临时脚手架目录（已合并到根目录）
+.gitignore-expo

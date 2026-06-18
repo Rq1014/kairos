@@ -1,0 +1,9 @@
+#文件放置规范
+  1、web层放Controller，按照模块放置不同的文件夹下
+  2、service层放service和对应的impl，同样按照模块放置不同的文件夹下
+  3、mapper层放数据库相关，按照模块放置不同的文件夹下
+  4、model层，request放置Controller的入参，response放置Controller的出参，BO放置中间环节需要的类
+  5、gateway层放拦截器等
+  6、config层放各种配置类，例如数据库配置，线程池配置等
+  7、entity层放数据库表对应的实体类
+  8、common层放通用的一些常量或类

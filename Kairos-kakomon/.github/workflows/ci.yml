@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+    branches:
+      - main
+      - master
+      - develop
+
+jobs:
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build check
+        run: npm run build-check
+
+  backend:
+    name: Backend checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Backend type check
+        working-directory: backend
+        run: npm run type-check
+
+      - name: Backend build
+        working-directory: backend
+        run: npm run build
+
+      - name: Database schema validation
+        working-directory: backend
+        run: npm run db:validate
+
+      - name: Database auth/user smoke
+        working-directory: backend
+        run: npm run db:smoke
+
+      - name: Backend smoke test
+        working-directory: backend
+        run: npm run smoke
+
+      - name: Backend API p95 baseline
+        working-directory: backend
+        run: npm run perf:baseline

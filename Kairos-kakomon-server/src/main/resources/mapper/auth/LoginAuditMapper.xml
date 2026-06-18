@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.auth.LoginAuditMapper">
+
+    <insert id="insert" parameterType="org.example.kairos.entity.LoginAuditEntity">
+        INSERT INTO login_audit (
+            user_id, identity_type, identity_value, login_method,
+            success, fail_reason, client_ip, user_agent, device_id, trace_id
+        ) VALUES (
+            #{userId}, #{identityType}, #{identityValue}, #{loginMethod},
+            #{success}, #{failReason}, #{clientIp}, #{userAgent}, #{deviceId}, #{traceId}
+        )
+    </insert>
+</mapper>
