@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.billing.SubscriptionMapper">
+
+    <resultMap id="SubMap" type="org.example.kairos.entity.SubscriptionEntity">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="plan" property="plan"/>
+        <result column="starts_at" property="startsAt"/>
+        <result column="expires_at" property="expiresAt"/>
+        <result column="status" property="status"/>
+        <result column="source_order_no" property="sourceOrderNo"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findByUserId" resultMap="SubMap">
+        SELECT * FROM subscription WHERE user_id = #{userId} ORDER BY id DESC LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="org.example.kairos.entity.SubscriptionEntity"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO subscription (
+            user_id, plan, starts_at, expires_at, status, source_order_no
+        ) VALUES (
+            #{userId}, #{plan}, #{startsAt}, #{expiresAt}, #{status}, #{sourceOrderNo}
+        )
+    </insert>
+
+    <update id="update" parameterType="org.example.kairos.entity.SubscriptionEntity">
+        UPDATE subscription
+        SET plan = #{plan},
+            starts_at = #{startsAt},
+            expires_at = #{expiresAt},
+            status = #{status},
+            source_order_no = #{sourceOrderNo}
+        WHERE id = #{id}
+    </update>
+
+    <update id="markExpired">
+        UPDATE subscription SET status = 'EXPIRED' WHERE id = #{id}
+    </update>
+</mapper>
