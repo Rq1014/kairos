@@ -7,6 +7,7 @@
 | 1 | [`V1_0__init_schema.sql`](./V1_0__init_schema.sql) | 建库与全部表结构（用户域 + 字典域）|
 | 2 | [`V1_1__seed_dictionary.sql`](./V1_1__seed_dictionary.sql) | 灌入字典初始化数据：大学 / 研究科 / 专业 |
 | 3 | [`V1_2__seed_demo_user.sql`](./V1_2__seed_demo_user.sql) | 灌入演示用户（对应前端 `DEMO_USER`，可选）|
+| 4 | [`V1_3__billing.sql`](./V1_3__billing.sql) | 会员体系：支付订单流水 + 订阅有效期两张表 |
 
 命令示例：
 
@@ -14,6 +15,7 @@
 mysql -uroot -p < V1_0__init_schema.sql
 mysql -uroot -p kakomon < V1_1__seed_dictionary.sql
 mysql -uroot -p kakomon < V1_2__seed_demo_user.sql
+mysql -uroot -p kakomon < V1_3__billing.sql
 ```
 
 数据库 / 字符集 / 排序规则：
