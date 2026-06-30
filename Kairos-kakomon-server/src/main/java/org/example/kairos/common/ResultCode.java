@@ -11,6 +11,7 @@ package org.example.kairos.common;
  *   <li>10200~10299 - 身份绑定相关</li>
  *   <li>10300~10399 - 用户资料/字典相关</li>
  *   <li>10400~10499 - 三方登录相关</li>
+ *   <li>10500~10599 - 订单/支付相关</li>
  * </ul>
  * 业务码与 HTTP 状态码解耦, HTTP 状态码由 {@code GlobalExceptionHandler} 统一映射。
  */
@@ -74,7 +75,16 @@ public enum ResultCode {
     /** 微信/Apple/Line 登录授权失败 */
     THIRD_PARTY_AUTH_FAIL(10401, "三方授权失败"),
     /** 三方登录后,业务要求必须先绑定手机号才能继续使用 */
-    REQUIRE_BIND_PHONE(10402, "需先绑定手机号");
+    REQUIRE_BIND_PHONE(10402, "需先绑定手机号"),
+
+    /** 订单不存在或不属于当前用户 */
+    ORDER_NOT_FOUND(10501, "订单不存在"),
+    /** 订单状态非法,无法执行该操作(如对非 PENDING 订单确认/取消) */
+    ORDER_STATUS_INVALID(10502, "订单状态异常"),
+    /** 套餐类型不合法 */
+    PLAN_INVALID(10503, "套餐不存在"),
+    /** 支付渠道不合法 */
+    CHANNEL_INVALID(10504, "支付渠道不支持");
 
     private final int code;
     private final String message;
