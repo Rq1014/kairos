@@ -125,7 +125,7 @@ public class BillingServiceImpl implements BillingService {
             // 续费: 仍有效从旧到期日叠加, 已过期从 now 起算
             LocalDateTime base = sub.getExpiresAt() != null && sub.getExpiresAt().isAfter(now)
                     ? sub.getExpiresAt() : now;
-            if (sub.getStartsAt() == null || !sub.getExpiresAt().isAfter(now)) {
+            if (sub.getStartsAt() == null || sub.getExpiresAt() == null || !sub.getExpiresAt().isAfter(now)) {
                 sub.setStartsAt(now);
             }
             sub.setExpiresAt(base.plusDays(planType.getDurationDays()));
