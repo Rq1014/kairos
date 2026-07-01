@@ -81,6 +81,7 @@ public class UserServiceImpl implements UserService {
     @Autowired private LoginAuditMapper loginAuditMapper;
     @Autowired private TokenService tokenService;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private org.example.kairos.service.billing.BillingService billingService;
 
     @Override
     @Transactional
@@ -145,7 +146,7 @@ public class UserServiceImpl implements UserService {
             resp.setAvatarUrl(profile.getAvatarUrl());
             resp.setMajor(profile.getMajor() == null ? "" : profile.getMajor());
             resp.setSelectedMajorCode(profile.getSelectedMajorCode());
-            resp.setIsPro(profile.getIsPro() != null && profile.getIsPro() == 1);
+            resp.setIsPro(billingService.isProActive(userId));
             resp.setFreeAiRemaining(nz(profile.getFreeAiRemaining(), 1));
             resp.setTokenBalance(nz(profile.getTokenBalance(), 0));
             resp.setSolvedCount(nz(profile.getSolvedCount(), 0));
