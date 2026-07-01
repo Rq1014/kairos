@@ -8,8 +8,11 @@ import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
 import { DEMO_USER } from '@/mocks/data';
+import { createOrder, confirmOrder, type PayChannelCode } from '@/api/billing';
+import { getMe } from '@/api/user';
+import { ApiError } from '@/api/client';
 
-type Plan = 'annual' | 'monthly';
+type Plan = 'ANNUAL' | 'MONTHLY';
 type PurchaseState = 'idle' | 'processing' | 'success' | 'error';
 
 const PRO_FEATURES = [
@@ -20,9 +23,15 @@ const PRO_FEATURES = [
 ] as const;
 
 const PLAN_INFO: Record<Plan, { label: string; price: string; unit: string; note: string; badge: string | null }> = {
-  annual:  { label: '年度 Pro', price: '¥198', unit: '/年', note: '相当于 ¥16.5/月', badge: '最划算' },
-  monthly: { label: '月度 Pro', price: '¥28',  unit: '/月', note: '随时取消',         badge: null },
+  ANNUAL:  { label: '年度 Pro', price: '¥198', unit: '/年', note: '相当于 ¥16.5/月', badge: '最划算' },
+  MONTHLY: { label: '月度 Pro', price: '¥28',  unit: '/月', note: '随时取消',         badge: null },
 };
+
+const CHANNELS: { code: PayChannelCode; label: string; icon: string }[] = [
+  { code: 'WECHAT', label: '微信支付', icon: 'crown' },
+  { code: 'ALIPAY', label: '支付宝',   icon: 'crown' },
+  { code: 'APPLE',  label: 'Apple',    icon: 'crown' },
+];
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container:   { flex: 1, backgroundColor: c.background },
@@ -67,6 +76,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   subscribeBtn:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginHorizontal: Spacing.screenPadding, backgroundColor: c.amber500, borderRadius: 14, paddingVertical: 14, minHeight: 50 },
   subscribeBtnLoading: { opacity: 0.7 },
   subscribeBtnText:    { fontSize: Typography.base, fontWeight: Typography.weightBold, color: '#fff' },
+  channels:        { paddingHorizontal: Spacing.screenPadding, gap: 8, marginBottom: 14 },
+  channelRow:      { flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1.5, borderColor: c.border, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: c.surface },
+  channelRowSelected: { borderColor: c.amber500, backgroundColor: c.amber500 + '0D' },
+  channelLabel:    { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.textSecondary },
+  channelLabelSel: { color: c.textPrimary },
   legal: { fontSize: Typography.xs, color: c.textMuted, textAlign: 'center', marginTop: 12, paddingHorizontal: Spacing.screenPadding },
 });
 
@@ -79,18 +93,28 @@ export default function PaywallScreen() {
   const setUser = useAuthStore((s) => s.setUser);
   const authToken = useAuthStore((s) => s.token) ?? '';
   const refreshToken = useAuthStore((s) => s.refreshToken);
-  const [selectedPlan, setSelectedPlan] = useState<Plan>('annual');
+  const [selectedPlan, setSelectedPlan] = useState<Plan>('ANNUAL');
+  const [selectedChannel, setSelectedChannel] = useState<PayChannelCode>('WECHAT');
   const [purchaseState, setPurchaseState] = useState<PurchaseState>('idle');
 
-  function handleSubscribe() {
+  async function handleSubscribe() {
     if (purchaseState === 'processing') return;
     setPurchaseState('processing');
-    setTimeout(() => {
-      // 模拟购买成功：本地置 isPro=true，解锁全部 VIP 权益。
-      setUser({ ...user, isPro: true }, authToken, refreshToken);
+    try {
+      // 第一步：下单（拿到伪支付参数）
+      const order = await createOrder(selectedPlan, selectedChannel);
+      // 模拟用户在第三方完成支付：直接确认（真实接入时这里换成等待支付回调）
+      await confirmOrder(order.orderNo);
+      // 以后端为准刷新用户，更新 isPro
+      const me = await getMe();
+      setUser(me, authToken, refreshToken);
       setPurchaseState('success');
       setTimeout(() => router.back(), 1800);
-    }, 2000);
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : '支付失败，请稍后重试';
+      console.warn('[paywall] purchase failed:', msg);
+      setPurchaseState('error');
+    }
   }
 
   if (purchaseState === 'success') {
@@ -138,7 +162,7 @@ export default function PaywallScreen() {
       </View>
 
       <View style={styles.plans}>
-        {(['annual', 'monthly'] as Plan[]).map((p) => {
+        {(['ANNUAL', 'MONTHLY'] as Plan[]).map((p) => {
           const info = PLAN_INFO[p];
           const selected = selectedPlan === p;
           return (
@@ -165,6 +189,24 @@ export default function PaywallScreen() {
         })}
       </View>
 
+      <View style={styles.channels}>
+        {CHANNELS.map((ch) => {
+          const selected = selectedChannel === ch.code;
+          return (
+            <Pressable
+              key={ch.code}
+              style={[styles.channelRow, selected && styles.channelRowSelected]}
+              onPress={() => setSelectedChannel(ch.code)}
+            >
+              <View style={[styles.radio, selected && styles.radioSelected]}>
+                {selected && <View style={styles.radioDot} />}
+              </View>
+              <Text style={[styles.channelLabel, selected && styles.channelLabelSel]}>{ch.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {purchaseState === 'error' && (
         <View style={styles.errorBanner}>
           <Icon name="xCircle" size={14} color={Colors.rose500} />
@@ -186,7 +228,7 @@ export default function PaywallScreen() {
           <>
             <Icon name="crown" size={16} color="#fff" />
             <Text style={styles.subscribeBtnText}>
-              {selectedPlan === 'annual' ? '立即订阅年度 Pro' : '立即订阅月度 Pro'}
+              {selectedPlan === 'ANNUAL' ? '立即订阅年度 Pro' : '立即订阅月度 Pro'}
             </Text>
           </>
         )}
