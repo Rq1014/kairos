@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getBillingStatus } from '@/api/billing';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -70,6 +72,15 @@ export default function BillingScreen() {
 
   const router = useRouter();
 
+  const { data: sub } = useQuery({
+    queryKey: ['billing', 'status'],
+    queryFn: getBillingStatus,
+  });
+  const isPro = sub?.isPro ?? false;
+  const expiresLabel = sub?.expiresAt
+    ? new Date(sub.expiresAt).toLocaleDateString('zh-CN')
+    : null;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -88,26 +99,33 @@ export default function BillingScreen() {
           <View style={styles.planCard}>
             <View style={styles.planRow}>
               <View style={styles.planIcon}>
-                <Icon name="sparkles" size={20} color={Colors.teal500} />
+                <Icon name={isPro ? 'crown' : 'sparkles'} size={20} color={isPro ? Colors.amber500 : Colors.teal500} />
               </View>
               <View style={styles.planMeta}>
-                <Text style={styles.planName}>免费版</Text>
-                <Text style={styles.planDesc}>3 个研究科 · 最近 3 年 · 看广告解锁更多</Text>
+                <Text style={styles.planName}>{isPro ? 'Pro 会员' : '免费版'}</Text>
+                <Text style={styles.planDesc}>
+                  {isPro
+                    ? (expiresLabel ? `有效期至 ${expiresLabel}` : 'Pro 权益已激活')
+                    : '3 个研究科 · 最近 3 年 · 看广告解锁更多'}
+                </Text>
               </View>
               <View style={styles.freeBadge}>
-                <Text style={styles.freeBadgeText}>Free</Text>
+                <Text style={styles.freeBadgeText}>{isPro ? 'Pro' : 'Free'}</Text>
               </View>
             </View>
-            <View style={styles.quotaRow}>
-              <View style={styles.quotaTrack}>
-                <View style={[styles.quotaFill, { width: '67%' }]} />
+            {!isPro && (
+              <View style={styles.quotaRow}>
+                <View style={styles.quotaTrack}>
+                  <View style={[styles.quotaFill, { width: '67%' }]} />
+                </View>
+                <Text style={styles.quotaLabel}>今日 AI 已用 2 / 3 次</Text>
               </View>
-              <Text style={styles.quotaLabel}>今日 AI 已用 2 / 3 次</Text>
-            </View>
+            )}
           </View>
         </View>
 
         {/* Upgrade CTA */}
+        {!isPro && (
         <Pressable style={styles.upgradeCard} onPress={() => router.push('/paywall' as any)}>
           <View style={styles.upgradeLeft}>
             <Icon name="crown" size={18} color={Colors.amber500} />
@@ -118,6 +136,7 @@ export default function BillingScreen() {
           </View>
           <Icon name="chevronRight" size={16} color={Colors.amber500} />
         </Pressable>
+        )}
 
         <View style={styles.gap} />
 
