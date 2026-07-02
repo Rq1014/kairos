@@ -23,6 +23,7 @@ import { useAttemptStore } from '@/store/attemptStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { canAccessQuestion, isQuestionAccessible } from '@/utils/accessPolicy';
 import { recommendRelated } from '@/utils/recommend';
+import QuestionBlocks from '@/components/study/QuestionBlocks';
 import type { KakomonQuestion, MasteryStatus, RelatedQuestion } from '@/types/question';
 
 type CrowdVote = 'easy' | 'medium' | 'hard' | null;
@@ -388,18 +389,11 @@ export default function QuestionDetailScreen() {
         </View>
 
         {/* ② Question body */}
-        {question.bodyText && (
+        {(question.contentBlocks?.length || question.bodyText) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>题目</Text>
             <Card style={styles.sectionCard}>
-              <Text style={styles.bodyText}>{question.bodyText}</Text>
-              {(question.formulaPreview ?? []).length > 0 && (
-                <View style={styles.formulaBox}>
-                  {question.formulaPreview!.map((f, i) => (
-                    <Text key={i} style={styles.formulaText}>{f}</Text>
-                  ))}
-                </View>
-              )}
+              <QuestionBlocks blocks={question.contentBlocks} fallbackText={question.bodyText} />
               <View style={styles.bodyActions}>
                 <Pressable style={styles.ghostBtn} onPress={() => setImageModalVisible(true)}>
                   <Icon name="eye" size={12} color={Colors.textMuted} />
