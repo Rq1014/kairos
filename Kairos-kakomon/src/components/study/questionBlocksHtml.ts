@@ -10,18 +10,13 @@ export function escapeHtml(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/** 转义要放进 JS 字符串字面量的 LaTeX（KaTeX 在浏览器端 render）。 */
-function toJsString(s: string): string {
-  return JSON.stringify(s);
-}
-
 function renderBlock(block: ContentBlock): string {
   switch (block.type) {
     case 'text':
       return `<p class="blk-text">${escapeHtml(block.content).replace(/\n/g, '<br/>')}</p>`;
     case 'math':
       // 占位 span，页面加载后由 KaTeX 渲染 data-latex
-      return `<div class="blk-math" data-latex=${toJsString(block.latex)}></div>`;
+      return `<div class="blk-math" data-latex="${escapeHtml(block.latex)}"></div>`;
     case 'image': {
       const cap = block.caption ? `<figcaption>${escapeHtml(block.caption)}</figcaption>` : '';
       return `<figure class="blk-image"><img src="${encodeURI(block.url)}" />${cap}</figure>`;
