@@ -1173,3 +1173,18 @@
 - [x] 类型检查通过
   ✅ 完成于 2026-06-18
 
+
+### 2026-07-02 任务：专题学习/模考 Phase 1（结构化题干渲染 + 模考试卷化）
+- [x] 类型层新增 ContentBlock / ExamPaper，KakomonQuestion 增量扩展 contentBlocks?/paperId?/orderIndex?
+  ✅ 完成于 2026-07-02，向后兼容，旧字段保留
+- [x] 新增 QuestionBlocks 渲染组件（react-native-webview + KaTeX，text/image/table 原生，math 走 WebView，纯文本回退）
+  ✅ 完成于 2026-07-02，KaTeX 本期用 CDN 兜底，离线内联留作收尾（见 spec §范围外）
+- [x] mock 数据升级：东大样例题填 contentBlocks，新增 KAKOMON_PAPERS；新增 src/api/papers.ts
+  ✅ 完成于 2026-07-02
+- [x] 详情页 / exam-session 答题区接入 QuestionBlocks（含旧题纯文本回退）
+  ✅ 完成于 2026-07-02
+- [x] 模考：exam-session 加倒计时 + 选做规则提示；mock-exam 年份卡改读 ExamPaper（时长/选做规则/传参）
+  ✅ 完成于 2026-07-02
+- [x] 门禁：npm run type-check 通过；npm run lint 0 error（既有 warning 属 WIP 基线，非本期文件）
+  ✅ 完成于 2026-07-02，静态走查渲染链路通过；未做实机验证（本环境无已启动模拟器），需在真机/模拟器人工确认公式渲染与倒计时
+- [ ] 后端落库（MySQL + MyBatis）为 Phase 2，另立计划
