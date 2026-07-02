@@ -1,5 +1,5 @@
 import type { University, UniGrads, UniMajors } from '@/types/university';
-import type { KakomonQuestion, WrongQuestion, KnowledgeMatrixGroup, ReferenceBook } from '@/types/question';
+import type { KakomonQuestion, WrongQuestion, KnowledgeMatrixGroup, ReferenceBook, ExamPaper } from '@/types/question';
 import type { ForumThread, ThreadReply, StudyGroup } from '@/types/forum';
 import type { UserProfile } from '@/types/user';
 
@@ -314,6 +314,17 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
     title: '固有值与对角化',
     bodyText: '设 3×3 实对称矩阵 A 满足 A·v₁ = 2v₁，A·v₂ = -v₂，A·v₃ = 5v₃，其中 v₁, v₂, v₃ 是相互正交的单位向量。\n（1）证明 A 必可对角化；\n（2）求 Aⁿ 的一般表达式（n 为正整数）；\n（3）若再设 B = A² - 6A + 5I，判断 B 是否可逆，并求其特征值。',
     formulaPreview: ['A·vᵢ = λᵢ·vᵢ,  i = 1, 2, 3', '求 Aⁿ  及  B = A² - 6A + 5I'],
+    paperId: 'p-todai-2024-math',
+    orderIndex: 3,
+    contentBlocks: [
+      { type: 'text', content: '設 3×3 実対称行列 A について、以下の問いに答えよ。' },
+      { type: 'math', latex: 'A v_1 = 2 v_1,\\quad A v_2 = -v_2,\\quad A v_3 = 5 v_3' },
+      { type: 'text', content: 'ここで v₁, v₂, v₃ は互いに直交する単位ベクトルである。' },
+      { type: 'text', content: '(1) A が対角化可能であることを示せ。' },
+      { type: 'text', content: '(2) 自然数 n に対し Aⁿ の一般式を求めよ。' },
+      { type: 'math', latex: 'B = A^2 - 6A + 5I' },
+      { type: 'text', content: '(3) B が可逆かどうか判定し、その固有値を求めよ。' },
+    ],
     knowledgePoints: ['线性代数', '固有值', '对角化', '二次型'],
     difficultyLabel: '中等偏难',
     difficultyLevel: 'hard',
@@ -787,3 +798,24 @@ export const KAKOMON_REFERENCE_BOOKS: ReferenceBook[] = [
 // ─── 搜索 ────────────────────────────────────────────────────
 export const KAKOMON_SEARCH_RECENT: string[] = ['对角化', '东大数学', '假设检验'];
 export const KAKOMON_SEARCH_HOT: string[] = ['固有值', '动态规划', '重积分', '假设检验', '傅里叶', '二次型'];
+
+// ─── 试卷（模考按试卷组织）────────────────────────────────────
+export const KAKOMON_PAPERS: ExamPaper[] = [
+  {
+    id: 'p-todai-2024-math',
+    universityId: 'todai',
+    graduateSchool: '情报理工学系研究科',
+    majorId: null,
+    year: 2024,
+    subject: '数学',
+    title: '2024年度 大学院入学試験問題 数学',
+    durationMinutes: 150,
+    totalScore: null,
+    selectRule: { total: 3, choose: 3 },
+    instructions: [
+      '試験開始の合図があるまで問題冊子を開かないこと。',
+      '解答は日本語または英語で記述すること。',
+    ],
+    questionIds: ['q-todai-2024-math-3', 'q-todai-2023-math-1'],
+  },
+];
