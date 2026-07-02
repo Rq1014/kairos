@@ -194,16 +194,6 @@ export default function SettingsScreen() {
               />
             </>
           )}
-          {/* 开发用：一键切换 Pro 状态，方便体验 VIP / 非 VIP 两种界面 */}
-          <View style={styles.rowDivider} />
-          <SettingsRow
-            label="开发：切换 Pro 状态"
-            value={user.isPro ? '点此切回免费' : '点此模拟开通 Pro'}
-            valueColor={Colors.blue500}
-            onPress={() => setUser({ ...user, isPro: !user.isPro }, authToken, refreshToken)}
-            showArrow
-            styles={styles}
-          />
         </SettingsGroup>
 
         <SettingsGroup title="外观" styles={styles}>

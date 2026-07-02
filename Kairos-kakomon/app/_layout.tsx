@@ -110,6 +110,7 @@ function RootLayoutNav() {
         <Stack.Screen name="questions/[id]"      options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="wrong-book"          options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="topic-study"         options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="topic-questions"     options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="mock-exam"           options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="exam-session"        options={{ animation: 'slide_from_right', gestureEnabled: false }} />
         <Stack.Screen name="history"             options={{ animation: 'slide_from_right' }} />

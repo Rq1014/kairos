@@ -23,82 +23,32 @@ import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
 import { canAccessQuestion, schoolLimit } from '@/utils/accessPolicy';
 import type { KakomonQuestion } from '@/types/question';
 
-interface ExamPaper {
+/**
+ * 左栏一项 = 学校 + 研究科 + 专业（平铺）。
+ */
+interface RailEntry {
+  key: string;
   universityId: string;
   gradSchool: string;
-  uniShort: string;
-  year: number;
-  questions: KakomonQuestion[];
-}
-
-/** 左栏一项 = 一所学校（同校多研究科合并到一行）。 */
-interface RailEntry {
-  universityId: string;
-  grads: string[];
+  majorId: string | null;
+  majorLabel: string | null;
   isTarget: boolean;
 }
 
-/** 把存储里的研究科归一到展示用值（缺省回退到该校首个研究科），保证左栏映射与增删改匹配一致。 */
+interface YearGroup {
+  year: number;
+  subjects: string[];
+  questions: KakomonQuestion[];
+}
+
 const normGrad = (universityId: string, gradSchool?: string) =>
   gradSchool ?? (UNI_GRADS[universityId]?.[0] ?? '');
 
-type PaperCardProps = {
-  paper: ExamPaper;
-  unlocked: boolean;
-  freeByTarget: boolean;
-  viaAd: boolean;
-  styles: ReturnType<typeof makeStyles>;
-  Colors: ThemeColors;
-  onStart: (paper: ExamPaper) => void;
-  onLockedPress: (paper: ExamPaper) => void;
-};
-
-function PaperCardImpl({ paper, unlocked, freeByTarget, viaAd, styles, Colors, onStart, onLockedPress }: PaperCardProps) {
-  const examSubjects = useMemo(
-    () => Array.from(new Set(paper.questions.map((q) => q.subject))),
-    [paper],
-  );
-  return (
-    <View style={styles.paperCard}>
-      <View style={styles.paperTop}>
-        <Text style={styles.paperYear}>{paper.year} 年度</Text>
-        <Text style={styles.paperMeta}>{paper.questions.length} 道大题</Text>
-      </View>
-      <View style={styles.subjectRow}>
-        {examSubjects.map((s) => (
-          <View key={s} style={styles.subjChip}>
-            <Text style={styles.subjChipText}>{s}</Text>
-          </View>
-        ))}
-      </View>
-      {freeByTarget && (
-        <View style={styles.unlockedBadge}>
-          <Icon name="check" size={9} color={Colors.green600} />
-          <Text style={styles.unlockedText}>目标研究科 · 免费</Text>
-        </View>
-      )}
-      {viaAd && (
-        <View style={styles.unlockedBadge}>
-          <Icon name="check" size={9} color={Colors.green600} />
-          <Text style={styles.unlockedText}>已解锁 · 24h 内</Text>
-        </View>
-      )}
-      {unlocked ? (
-        <Pressable style={styles.startBtn} onPress={() => onStart(paper)}>
-          <Icon name="clock" size={14} color="#fff" />
-          <Text style={styles.startBtnText}>开始模考（{paper.questions.length} 题）</Text>
-        </Pressable>
-      ) : (
-        <Pressable style={styles.lockBtn} onPress={() => onLockedPress(paper)}>
-          <Icon name="eye" size={14} color="#fff" />
-          <Text style={styles.lockBtnText}>看广告解锁这套（24h）</Text>
-        </Pressable>
-      )}
-    </View>
-  );
+function gradShort(g: string): string {
+  if (!g) return '—';
+  const core = g.replace(/(研究科|学府|学院|研究院)$/u, '');
+  return core.length > 5 ? core.slice(0, 5) : core || g;
 }
-
-const PaperCard = memo(PaperCardImpl);
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.background },
@@ -110,54 +60,48 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   body: { flex: 1, flexDirection: 'row' },
 
-  // 左栏（按学校合并）
-  rail: { width: 68, flexGrow: 0, flexShrink: 0, borderRightWidth: 1, borderRightColor: c.border, backgroundColor: c.surfaceAlt },
-  railItem: { position: 'relative', paddingVertical: 10, paddingHorizontal: 2, alignItems: 'center', gap: 3, borderLeftWidth: 3, borderLeftColor: 'transparent' },
-  railMore: { position: 'absolute', right: 2, bottom: 6, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' },
+  // 左栏
+  rail: { width: 76, flexGrow: 0, flexShrink: 0, borderRightWidth: 1, borderRightColor: c.border, backgroundColor: c.surfaceAlt },
+  railItem: { position: 'relative', paddingVertical: 8, paddingHorizontal: 4, alignItems: 'center', gap: 2, borderLeftWidth: 3, borderLeftColor: 'transparent' },
   railItemActive: { backgroundColor: c.background, borderLeftColor: c.indigo500 },
-  railAvatar: { width: 30, height: 30, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  railAvatarText: { fontSize: 12, fontWeight: Typography.weightBold, color: '#fff' },
-  railName: { fontSize: 10, color: c.textSecondary, fontWeight: Typography.weightMedium, textAlign: 'center' },
+  railAvatar: { width: 28, height: 28, borderRadius: 7, alignItems: 'center', justifyContent: 'center' },
+  railAvatarText: { fontSize: 11, fontWeight: Typography.weightBold, color: '#fff' },
+  railName: { fontSize: 9, color: c.textSecondary, fontWeight: Typography.weightMedium, textAlign: 'center' },
   railNameActive: { color: c.textPrimary, fontWeight: Typography.weightBold },
-  railGradCount: { fontSize: 8, color: c.textMuted, textAlign: 'center', lineHeight: 10 },
-  railAdd: { paddingVertical: 12, alignItems: 'center', gap: 3 },
-  railAddIcon: { width: 30, height: 30, borderRadius: 15, borderWidth: 1, borderColor: c.indigo500, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
+  railSub: { fontSize: 8, color: c.textMuted, textAlign: 'center', lineHeight: 10 },
+  railMore: { position: 'absolute', right: 1, top: 4, width: 14, height: 14, alignItems: 'center', justifyContent: 'center' },
+  railAdd: { paddingVertical: 10, alignItems: 'center', gap: 3 },
+  railAddIcon: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: c.indigo500, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' },
   railAddText: { fontSize: 9, color: c.indigo500, fontWeight: Typography.weightSemibold },
   railDivider: { height: 1, backgroundColor: c.border, marginVertical: 4, marginHorizontal: 8 },
 
   // 右侧
   right: { flex: 1 },
-  rightScroll: { paddingHorizontal: Spacing.cardPadding, paddingTop: Spacing.cardPadding, paddingBottom: 8, gap: 10 },
+  rightScroll: { paddingHorizontal: Spacing.cardPadding, paddingTop: Spacing.cardPadding, paddingBottom: 8 },
   rightTitle: { fontSize: Typography.base, fontWeight: Typography.weightBold, color: c.textPrimary, marginBottom: 2 },
-  rightGrad: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.indigo600, marginBottom: 2 },
-  rightSub: { fontSize: Typography.xs, color: c.textMuted, marginBottom: 8 },
+  rightGrad: { fontSize: Typography.sm, color: c.indigo600, fontWeight: Typography.weightSemibold, marginBottom: 2 },
+  rightSub: { fontSize: Typography.xs, color: c.textMuted, marginBottom: 12 },
 
-  // 面包屑
-  crumbRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10, flexWrap: 'wrap' },
-  crumbLink: { fontSize: Typography.sm, color: c.indigo600, fontWeight: Typography.weightSemibold },
-  crumbSep: { fontSize: Typography.sm, color: c.textMuted },
-  crumbCur: { fontSize: Typography.sm, color: c.textPrimary, fontWeight: Typography.weightSemibold },
-
-  // 列表通用卡（研究科 / 专业）
-  listRow: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: c.surface, borderRadius: Spacing.cardRadius, borderWidth: 1, borderColor: c.border, paddingHorizontal: 14, paddingVertical: 14 },
-  listAccent: { width: 4, height: 20, borderRadius: 2 },
-  listMain: { flex: 1, gap: 2 },
-  listName: { fontSize: Typography.sm, fontWeight: Typography.weightBold, color: c.textPrimary },
-  listSub: { fontSize: Typography.xs, color: c.textMuted },
-  targetTag: { fontSize: 10, color: c.green600, fontWeight: Typography.weightBold, backgroundColor: c.green500 + '22', paddingHorizontal: 5, paddingVertical: 1, borderRadius: 4, marginLeft: 6 },
-
-  // 试卷卡
-  paperCard: { backgroundColor: c.surface, borderRadius: Spacing.cardRadius, borderWidth: 1, borderColor: c.border, padding: Spacing.cardPadding, gap: 8 },
+  // 年度试卷卡
+  paperCard: { backgroundColor: c.surface, borderRadius: Spacing.cardRadius, borderWidth: 1, borderColor: c.border, padding: Spacing.cardPadding, gap: 10, marginBottom: 10 },
   paperTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   paperYear: { fontSize: Typography.base, fontWeight: Typography.weightBold, color: c.textPrimary },
   paperMeta: { fontSize: Typography.xs, color: c.textMuted },
-  subjectRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  subjChip: { backgroundColor: c.surfaceAlt, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
-  subjChipText: { fontSize: Typography.xs, color: c.textSecondary },
 
-  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.indigo600, borderRadius: 10, paddingVertical: 11 },
+  // 科目下拉
+  subjectDropdown: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.surfaceAlt, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7, alignSelf: 'flex-start' },
+  subjectDropdownText: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.textPrimary },
+  subjectMenu: { backgroundColor: c.surface, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 6, overflow: 'hidden' },
+  subjectMenuItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
+  subjectMenuItemActive: { backgroundColor: c.indigo500 + '11' },
+  subjectMenuItemLast: { borderBottomWidth: 0 },
+  subjectMenuItemText: { fontSize: Typography.sm, color: c.textPrimary },
+  subjectMenuItemTextActive: { color: c.indigo600, fontWeight: Typography.weightBold },
+  questionCount: { fontSize: Typography.xs, color: c.textMuted, marginTop: 4 },
+
+  startBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.indigo600, borderRadius: 10, paddingVertical: 11, marginTop: 4 },
   startBtnText: { fontSize: Typography.sm, fontWeight: Typography.weightBold, color: '#fff' },
-  lockBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.amber500, borderRadius: 10, paddingVertical: 11 },
+  lockBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.amber500, borderRadius: 10, paddingVertical: 11, marginTop: 4 },
   lockBtnText: { fontSize: Typography.sm, fontWeight: Typography.weightBold, color: '#fff' },
   unlockedBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: c.green500 + '22', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10 },
   unlockedText: { fontSize: 10, color: c.green600, fontWeight: Typography.weightBold },
@@ -165,7 +109,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   empty: { alignItems: 'center', paddingVertical: 50, gap: 8 },
   emptyText: { fontSize: Typography.sm, color: c.textMuted, textAlign: 'center' },
 
-  // 「⋮」操作菜单
+  // 菜单
   menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center', padding: 32 },
   menuCard: { backgroundColor: c.background, borderRadius: 16, paddingVertical: 6, minWidth: 240, borderWidth: 1, borderColor: c.border },
   menuTitle: { fontSize: Typography.xs, color: c.textMuted, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 6 },
@@ -174,7 +118,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   menuItemDanger: { color: c.rose600 },
   menuSep: { height: 1, backgroundColor: c.border, marginVertical: 2 },
 
-  // Add-school modal
+  // 添加 sheet
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   modalSheet: { backgroundColor: c.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%', paddingBottom: 32 },
   modalHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: c.border, alignSelf: 'center', marginTop: 10 },
@@ -186,8 +130,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   uniRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 11 },
   uniRowAvatar: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   uniRowName: { flex: 1, fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.textPrimary },
-
-  // 研究科选择
   gradRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: c.border },
   gradName: { flex: 1, fontSize: Typography.sm, color: c.textPrimary },
   gradAdded: { fontSize: Typography.xs, color: c.green600, fontWeight: Typography.weightSemibold },
@@ -203,156 +145,125 @@ export default function MockExamScreen() {
   const refreshToken = useAuthStore((s) => s.refreshToken);
 
   const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
-  useAdStore((s) => s.unlockedSchoolYears); // 订阅，解锁后刷新
+  useAdStore((s) => s.unlockedSchoolYears);
 
   const TARGET_LIMIT = schoolLimit(user);
-
   const accent500: Record<string, string> = {
     blue: Colors.blue500, teal: Colors.teal500, indigo: Colors.indigo500, amber: Colors.amber500, rose: Colors.rose500,
   };
-  const isVip = !!user.isPro;
 
   const browseRaw = useBrowseSchoolsStore((s) => s.entries);
   const addBrowse = useBrowseSchoolsStore((s) => s.add);
   const removeBrowse = useBrowseSchoolsStore((s) => s.remove);
   const reorderBrowse = useBrowseSchoolsStore((s) => s.reorder);
 
-  /** 左栏按 universityId 合并：一所学校一行，研究科作为该校挂的子集合传入右栏。 */
-  const targetUniIds = useMemo(
-    () => Array.from(new Set((user.targetSchools ?? [])
-      .filter((s) => KAKOMON_UNIVERSITIES.some((u) => u.id === s.universityId))
-      .map((s) => s.universityId))),
-    [user.targetSchools],
-  );
-  const browseUniIds = useMemo(
-    () => Array.from(new Set(browseRaw.map((e) => e.universityId))),
-    [browseRaw],
-  );
-
-  const collectGrads = useCallback((universityId: string): string[] => {
-    const seen = new Set<string>();
-    const out: string[] = [];
+  // 构建左栏：每个条目 = 学校+研究科+专业
+  const railEntries: RailEntry[] = useMemo(() => {
+    const out: RailEntry[] = [];
     (user.targetSchools ?? []).forEach((s) => {
-      if (s.universityId !== universityId) return;
-      const g = normGrad(universityId, s.gradSchool);
-      if (g && !seen.has(g)) { seen.add(g); out.push(g); }
+      const grad = normGrad(s.universityId, s.gradSchool);
+      const majors = UNI_MAJORS[`${s.universityId}::${grad}`] ?? [];
+      const mj = s.majorId ? majors.find((m) => m.id === s.majorId) : null;
+      out.push({
+        key: `${s.universityId}::${grad}::${s.majorId ?? ''}`,
+        universityId: s.universityId,
+        gradSchool: grad,
+        majorId: s.majorId ?? null,
+        majorLabel: mj?.label ?? null,
+        isTarget: true,
+      });
     });
     browseRaw.forEach((e) => {
-      if (e.universityId !== universityId) return;
-      if (e.gradSchool && !seen.has(e.gradSchool)) { seen.add(e.gradSchool); out.push(e.gradSchool); }
+      const grad = e.gradSchool ?? (UNI_GRADS[e.universityId]?.[0] ?? '');
+      const key = `${e.universityId}::${grad}::`;
+      if (out.some((r) => r.key === key)) return;
+      out.push({
+        key,
+        universityId: e.universityId,
+        gradSchool: grad,
+        majorId: null,
+        majorLabel: null,
+        isTarget: false,
+      });
     });
     return out;
   }, [user.targetSchools, browseRaw]);
 
-  const railEntries: RailEntry[] = useMemo(() => {
-    const seen = new Set<string>();
-    const out: RailEntry[] = [];
-    targetUniIds.forEach((id) => {
-      if (seen.has(id)) return;
-      seen.add(id);
-      out.push({ universityId: id, grads: collectGrads(id), isTarget: true });
-    });
-    browseUniIds.forEach((id) => {
-      if (seen.has(id)) return;
-      seen.add(id);
-      out.push({ universityId: id, grads: collectGrads(id), isTarget: false });
-    });
-    return out;
-  }, [targetUniIds, browseUniIds, collectGrads]);
-
   const targetEntries = railEntries.filter((e) => e.isTarget);
   const browseEntries = railEntries.filter((e) => !e.isTarget);
 
-  // 学校 → 研究科 → 专业 → 年度模考
-  const [activeUniId, setActiveUniId] = useState<string>(targetUniIds[0] ?? '');
-  const [activeGrad, setActiveGrad] = useState<string | null>(null);
-  const [activeMajor, setActiveMajor] = useState<string | null>(null);
+  const [activeKey, setActiveKey] = useState<string>(railEntries[0]?.key ?? '');
+  // 每张年份卡独立管理其选中的 subject 和下拉展开状态
+  const [yearSubjectMap, setYearSubjectMap] = useState<Record<number, string>>({});
+  const [yearDropdownOpen, setYearDropdownOpen] = useState<number | null>(null);
 
-  const activeEntry = railEntries.find((e) => e.universityId === activeUniId);
-  const activeUni = activeUniId ? KAKOMON_UNIVERSITIES.find((u) => u.id === activeUniId) : undefined;
+  const activeEntry = railEntries.find((e) => e.key === activeKey);
+  const activeUni = activeEntry ? KAKOMON_UNIVERSITIES.find((u) => u.id === activeEntry.universityId) : undefined;
 
-  function selectUni(universityId: string) {
-    setActiveUniId(universityId);
-    setActiveGrad(null);
-    setActiveMajor(null);
+  function selectEntry(key: string) {
+    setActiveKey(key);
+    setYearSubjectMap({});
+    setYearDropdownOpen(null);
   }
 
-  /** 当前研究科可选专业：只展示用户在 user.targetSchools 中显式勾过的 majorId（与专题学习一致） */
-  const majorOptions = useMemo(() => {
-    if (!activeEntry || !activeGrad) return [];
-    const all = UNI_MAJORS[`${activeEntry.universityId}::${activeGrad}`] ?? [];
-    if (all.length === 0) return [];
-    const picked = new Set(
-      (user.targetSchools ?? [])
-        .filter((s) =>
-          s.universityId === activeEntry.universityId &&
-          normGrad(activeEntry.universityId, s.gradSchool) === activeGrad &&
-          s.majorId,
-        )
-        .map((s) => s.majorId as string),
-    );
-    return all.filter((m) => picked.has(m.id));
-  }, [activeEntry, activeGrad, user.targetSchools]);
-
-  /** 当前研究科下的题池（不限专业） */
-  const gradPool = useMemo(
-    () => (activeEntry && activeGrad
-      ? KAKOMON_QUESTIONS.filter((q) => q.universityId === activeEntry.universityId && q.graduateSchool === activeGrad)
-      : []),
-    [activeEntry, activeGrad],
-  );
-
-  /** 各专业题量（majorIds 命中即计数；缺省 majorIds 视为该研究科全部专业通用） */
-  const majorCounts = useMemo(() => {
-    const m = new Map<string, number>();
-    majorOptions.forEach((mj) => m.set(mj.id, 0));
-    gradPool.forEach((q) => {
-      if (!q.majorIds || q.majorIds.length === 0) {
-        majorOptions.forEach((mj) => m.set(mj.id, (m.get(mj.id) ?? 0) + 1));
-      } else {
-        q.majorIds.forEach((id) => {
-          if (m.has(id)) m.set(id, (m.get(id) ?? 0) + 1);
-        });
+  // 当前条目的题池
+  const pool = useMemo(() => {
+    if (!activeEntry) return [];
+    return KAKOMON_QUESTIONS.filter((q) => {
+      if (q.universityId !== activeEntry.universityId) return false;
+      if (q.graduateSchool !== activeEntry.gradSchool) return false;
+      if (activeEntry.majorId) {
+        if (q.majorIds && q.majorIds.length > 0 && !q.majorIds.includes(activeEntry.majorId)) return false;
       }
+      return true;
     });
-    return m;
-  }, [majorOptions, gradPool]);
+  }, [activeEntry]);
 
-  /** 专业过滤后的题池 */
-  const majorPool = useMemo(() => {
-    if (!activeMajor) return gradPool;
-    return gradPool.filter((q) => !q.majorIds || q.majorIds.length === 0 || q.majorIds.includes(activeMajor));
-  }, [gradPool, activeMajor]);
-
-  /** 年度试卷：按 year 聚合（专业过滤后） */
-  const papers = useMemo(() => {
-    if (!activeEntry || !activeGrad) return [];
-    const map = new Map<number, ExamPaper>();
-    majorPool.forEach((q) => {
-      if (!map.has(q.year)) {
-        map.set(q.year, { universityId: q.universityId, gradSchool: q.graduateSchool, uniShort: activeUni?.short ?? '—', year: q.year, questions: [] });
-      }
-      map.get(q.year)!.questions.push(q);
+  // 按年聚合
+  const yearGroups: YearGroup[] = useMemo(() => {
+    const map = new Map<number, KakomonQuestion[]>();
+    pool.forEach((q) => {
+      if (!map.has(q.year)) map.set(q.year, []);
+      map.get(q.year)!.push(q);
     });
-    return [...map.values()].sort((a, b) => b.year - a.year);
-  }, [activeEntry, activeGrad, majorPool, activeUni]);
+    return [...map.entries()]
+      .sort(([a], [b]) => b - a)
+      .map(([year, qs]) => ({
+        year,
+        subjects: Array.from(new Set(qs.map((q) => q.subject))),
+        questions: qs,
+      }));
+  }, [pool]);
 
-  function startExam(p: ExamPaper) {
-    const ids = p.questions.map((q) => q.id).join(',');
-    router.push(`/exam-session?title=${encodeURIComponent(`${p.uniShort} ${p.year} 模考`)}&universityId=${p.universityId}&mode=mock&ids=${ids}` as any);
+  function getSelectedSubject(year: number, subjects: string[]): string {
+    return yearSubjectMap[year] ?? subjects[0] ?? '';
   }
 
-  const handleStart = useCallback((p: ExamPaper) => startExam(p), []);
+  function selectYearSubject(year: number, subject: string) {
+    setYearSubjectMap((m) => ({ ...m, [year]: subject }));
+    setYearDropdownOpen(null);
+  }
 
-  function onPaperPress(p: ExamPaper) {
-    if (canAccessQuestion(user, { universityId: p.universityId, gradSchool: p.gradSchool, year: p.year }).allowed) {
-      startExam(p);
+  function startExam(year: number, subject: string) {
+    if (!activeEntry) return;
+    const qs = pool.filter((q) => q.year === year && q.subject === subject);
+    if (qs.length === 0) return;
+    const ids = qs.map((q) => q.id).join(',');
+    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subject}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}` as any);
+  }
+
+  // 广告门
+  const [gate, setGate] = useState<{ year: number; subject: string } | null>(null);
+
+  function handleExamPress(year: number, subject: string) {
+    if (!activeEntry) return;
+    const access = canAccessQuestion(user, { universityId: activeEntry.universityId, gradSchool: activeEntry.gradSchool, year });
+    if (access.allowed) {
+      startExam(year, subject);
     } else {
-      setGate(p);
+      setGate({ year, subject });
     }
   }
-
-  const handleLockedPress = useCallback((p: ExamPaper) => onPaperPress(p), [user]);
 
   // 添加流程
   const [addOpen, setAddOpen] = useState(false);
@@ -360,7 +271,6 @@ export default function MockExamScreen() {
   const [addStep, setAddStep] = useState<'school' | 'grad'>('school');
   const [pendingUni, setPendingUni] = useState<string | null>(null);
   const [addQuery, setAddQuery] = useState('');
-  const [gate, setGate] = useState<ExamPaper | null>(null);
   const [menuFor, setMenuFor] = useState<RailEntry | null>(null);
 
   function openAdd(mode: 'target' | 'browse') {
@@ -369,90 +279,68 @@ export default function MockExamScreen() {
 
   function pickGrad(grad: string) {
     if (!pendingUni) return;
-    if (addMode === 'target') addTargetSchool(pendingUni, grad);
-    else addBrowse({ universityId: pendingUni, gradSchool: grad });
-    setActiveUniId(pendingUni);
-    setActiveGrad(grad);
-    setActiveMajor(null);
+    if (addMode === 'target') {
+      const schools = user.targetSchools ?? [];
+      if (!schools.some((s) => s.universityId === pendingUni && normGrad(s.universityId, s.gradSchool) === grad)) {
+        const firstType = schools[0]?.type ?? 'daigakuin';
+        setUser({ ...user, targetSchools: [...schools, { universityId: pendingUni, type: firstType, gradSchool: grad, subjects: [], priority: schools.length + 1 }] }, authToken, refreshToken);
+      }
+    } else {
+      addBrowse({ universityId: pendingUni, gradSchool: grad });
+    }
+    const newKey = `${pendingUni}::${grad}::`;
+    setActiveKey(newKey);
+    setYearSubjectMap({});
+    setYearDropdownOpen(null);
     setAddOpen(false);
   }
 
-  function addTargetSchool(universityId: string, grad: string) {
-    const schools = user.targetSchools ?? [];
-    if (schools.some((s) => s.universityId === universityId && normGrad(s.universityId, s.gradSchool) === grad)) return;
-    const firstType = schools[0]?.type ?? 'daigakuin';
-    const next = [
-      ...schools,
-      { universityId, type: firstType, gradSchool: grad, subjects: [], priority: schools.length + 1 },
-    ];
-    setUser({ ...user, targetSchools: next }, authToken, refreshToken);
-  }
-
-  function persistTargets(next: typeof user.targetSchools) {
-    setUser({ ...user, targetSchools: next.map((s, i) => ({ ...s, priority: i + 1 })) }, authToken, refreshToken);
-  }
-
-  /** 学校级移动：把同 universityId 的所有 target 条目作为一组移动 */
-  function moveEntry(entry: RailEntry, action: 'top' | 'up' | 'down') {
-    if (entry.isTarget) {
-      const arr = [...(user.targetSchools ?? [])];
-      const groups: { uniId: string; items: typeof arr }[] = [];
-      arr.forEach((s) => {
-        const g = groups.find((x) => x.uniId === s.universityId);
-        if (g) g.items.push(s); else groups.push({ uniId: s.universityId, items: [s] });
-      });
-      const idx = groups.findIndex((g) => g.uniId === entry.universityId);
-      if (idx >= 0) {
-        const [item] = groups.splice(idx, 1);
-        const to = action === 'top' ? 0 : action === 'up' ? Math.max(0, idx - 1) : Math.min(groups.length, idx + 1);
-        groups.splice(to, 0, item);
-        persistTargets(groups.flatMap((g) => g.items));
-      }
-    } else {
-      const arr = [...browseRaw];
-      const groups: { uniId: string; items: typeof arr }[] = [];
-      arr.forEach((e) => {
-        const g = groups.find((x) => x.uniId === e.universityId);
-        if (g) g.items.push(e); else groups.push({ uniId: e.universityId, items: [e] });
-      });
-      const idx = groups.findIndex((g) => g.uniId === entry.universityId);
-      if (idx >= 0) {
-        const [item] = groups.splice(idx, 1);
-        const to = action === 'top' ? 0 : action === 'up' ? Math.max(0, idx - 1) : Math.min(groups.length, idx + 1);
-        groups.splice(to, 0, item);
-        reorderBrowse(groups.flatMap((g) => g.items));
-      }
-    }
-    setMenuFor(null);
-  }
-
-  /** 学校级删除：把该校所有研究科条目都删掉 */
   function deleteEntry(entry: RailEntry) {
     const u = KAKOMON_UNIVERSITIES.find((x) => x.id === entry.universityId);
     const clearActive = () => {
-      if (entry.universityId === activeUniId) {
-        setActiveUniId('');
-        setActiveGrad(null); setActiveMajor(null);
-      }
+      if (entry.key === activeKey) { setActiveKey(''); setYearSubjectMap({}); setYearDropdownOpen(null); }
       setMenuFor(null);
     };
     if (entry.isTarget) {
-      Alert.alert(
-        `移除 ${u?.short ?? '该校'}`,
-        '该校是备考目标校，删除后将同步从「目标校」中移除（含其下全部研究科）。确定吗？',
-        [
-          { text: '取消', style: 'cancel' },
-          { text: '删除并同步', style: 'destructive', onPress: () => {
-            persistTargets((user.targetSchools ?? []).filter((s) => s.universityId !== entry.universityId));
-            browseRaw.filter((e) => e.universityId === entry.universityId).forEach((e) => removeBrowse(e));
-            clearActive();
-          } },
-        ],
-      );
+      Alert.alert('移除', `确定移除 ${u?.short ?? ''} ${gradShort(entry.gradSchool)}${entry.majorLabel ? ' · ' + entry.majorLabel : ''}？`, [
+        { text: '取消', style: 'cancel' },
+        { text: '删除', style: 'destructive', onPress: () => {
+          const next = (user.targetSchools ?? []).filter((s) => {
+            const g = normGrad(s.universityId, s.gradSchool);
+            return !(s.universityId === entry.universityId && g === entry.gradSchool && (s.majorId ?? '') === (entry.majorId ?? ''));
+          });
+          setUser({ ...user, targetSchools: next.map((s, i) => ({ ...s, priority: i + 1 })) }, authToken, refreshToken);
+          clearActive();
+        }},
+      ]);
     } else {
-      browseRaw.filter((e) => e.universityId === entry.universityId).forEach((e) => removeBrowse(e));
+      browseRaw.filter((e) => e.universityId === entry.universityId && (e.gradSchool ?? '') === entry.gradSchool).forEach((e) => removeBrowse(e));
       clearActive();
     }
+  }
+
+  function moveEntry(entry: RailEntry, action: 'up' | 'down') {
+    if (entry.isTarget) {
+      const arr = [...(user.targetSchools ?? [])];
+      const idx = arr.findIndex((s) => {
+        const g = normGrad(s.universityId, s.gradSchool);
+        return s.universityId === entry.universityId && g === entry.gradSchool && (s.majorId ?? '') === (entry.majorId ?? '');
+      });
+      if (idx < 0) return;
+      const to = action === 'up' ? Math.max(0, idx - 1) : Math.min(arr.length - 1, idx + 1);
+      const [item] = arr.splice(idx, 1);
+      arr.splice(to, 0, item);
+      setUser({ ...user, targetSchools: arr.map((s, i) => ({ ...s, priority: i + 1 })) }, authToken, refreshToken);
+    } else {
+      const arr = [...browseRaw];
+      const idx = arr.findIndex((e) => e.universityId === entry.universityId && (e.gradSchool ?? '') === entry.gradSchool);
+      if (idx < 0) return;
+      const to = action === 'up' ? Math.max(0, idx - 1) : Math.min(arr.length - 1, idx + 1);
+      const [item] = arr.splice(idx, 1);
+      arr.splice(to, 0, item);
+      reorderBrowse(arr);
+    }
+    setMenuFor(null);
   }
 
   const addCandidates = KAKOMON_UNIVERSITIES.filter((u) => {
@@ -460,39 +348,28 @@ export default function MockExamScreen() {
     if (!kw) return true;
     return u.short.toLowerCase().includes(kw) || u.nameCn.includes(addQuery) || u.nameJp.includes(addQuery) || u.nameEn.toLowerCase().includes(kw);
   });
-
   const pendingUniObj = pendingUni ? KAKOMON_UNIVERSITIES.find((u) => u.id === pendingUni) : null;
   const pendingGrads = pendingUni ? (UNI_GRADS[pendingUni] ?? []) : [];
 
   function renderRailItem(e: RailEntry) {
     const u = KAKOMON_UNIVERSITIES.find((x) => x.id === e.universityId);
     if (!u) return null;
-    const active = activeUniId === e.universityId;
+    const active = activeKey === e.key;
     const bg = accent500[u.accent] ?? Colors.indigo500;
     return (
-      <Pressable key={e.universityId} style={[styles.railItem, active && styles.railItemActive]} onPress={() => selectUni(e.universityId)}>
+      <Pressable key={e.key} style={[styles.railItem, active && styles.railItemActive]} onPress={() => selectEntry(e.key)}>
         <View style={[styles.railAvatar, { backgroundColor: bg }]}>
           <Text style={styles.railAvatarText}>{u.short.slice(0, 1)}</Text>
         </View>
         <Text style={[styles.railName, active && styles.railNameActive]} numberOfLines={1}>{u.short}</Text>
-        <Text style={styles.railGradCount} numberOfLines={1}>{e.grads.length} 研究科</Text>
+        <Text style={styles.railSub} numberOfLines={1}>{gradShort(e.gradSchool)}</Text>
+        {e.majorLabel && <Text style={styles.railSub} numberOfLines={1}>{e.majorLabel}</Text>}
         <Pressable style={styles.railMore} hitSlop={6} onPress={() => setMenuFor(e)}>
-          <Icon name="more" size={13} color={Colors.textMuted} />
+          <Icon name="more" size={11} color={Colors.textMuted} />
         </Pressable>
       </Pressable>
     );
   }
-
-  const activeGradIsTarget = !!(activeGrad && (user.targetSchools ?? []).some((s) =>
-    s.universityId === activeUniId && normGrad(activeUniId, s.gradSchool) === activeGrad,
-  ));
-
-  // 当前展示层：paper（年度模考） | major | grad | empty
-  const layer: 'paper' | 'major' | 'grad' | 'empty' =
-    !activeEntry ? 'empty'
-      : !activeGrad ? 'grad'
-        : majorOptions.length > 0 && !activeMajor ? 'major'
-          : 'paper';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -502,7 +379,7 @@ export default function MockExamScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>模拟考试</Text>
-          <Text style={styles.headerSub}>学校 → 研究科 → 专业 → 年度整卷模考</Text>
+          <Text style={styles.headerSub}>选择目标 → 年份 → 科目 → 开始</Text>
         </View>
       </View>
 
@@ -510,158 +387,145 @@ export default function MockExamScreen() {
         {/* 左栏 */}
         <ScrollView style={styles.rail} showsVerticalScrollIndicator={false}>
           {targetEntries.map((e) => renderRailItem(e))}
-          {targetUniIds.length < TARGET_LIMIT && (
+          {targetEntries.length < TARGET_LIMIT && (
             <Pressable style={styles.railAdd} onPress={() => openAdd('target')}>
-              <View style={styles.railAddIcon}><Icon name="plus" size={16} color={Colors.indigo500} /></View>
-              <Text style={styles.railAddText}>目标校</Text>
+              <View style={styles.railAddIcon}><Icon name="plus" size={14} color={Colors.indigo500} /></View>
+              <Text style={styles.railAddText}>目标</Text>
             </Pressable>
           )}
-          <View style={styles.railDivider} />
+          {browseEntries.length > 0 && <View style={styles.railDivider} />}
           {browseEntries.map((e) => renderRailItem(e))}
           <Pressable style={styles.railAdd} onPress={() => openAdd('browse')}>
-            <View style={[styles.railAddIcon, { borderColor: Colors.textMuted }]}><Icon name="plus" size={16} color={Colors.textMuted} /></View>
+            <View style={[styles.railAddIcon, { borderColor: Colors.textMuted }]}><Icon name="plus" size={14} color={Colors.textMuted} /></View>
             <Text style={[styles.railAddText, { color: Colors.textMuted }]}>浏览</Text>
           </Pressable>
         </ScrollView>
 
         {/* 右侧 */}
         <View style={styles.right}>
-          {layer === 'empty' ? (
+          {!activeEntry ? (
             <View style={styles.empty}>
-              <Icon name="plus" size={28} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>点击左侧「添加」选择学校与研究科</Text>
+              <Icon name="clock" size={28} color={Colors.textMuted} />
+              <Text style={styles.emptyText}>点击左侧选择目标开始模考</Text>
             </View>
           ) : (
             <ScrollView contentContainerStyle={styles.rightScroll} showsVerticalScrollIndicator={false}>
               <Text style={styles.rightTitle}>{activeUni?.nameCn}</Text>
-              {activeGrad && (
-                <Text style={styles.rightGrad} numberOfLines={2}>
-                  {activeGrad}
-                  {activeMajor && majorOptions.find((m) => m.id === activeMajor)
-                    ? ` · ${majorOptions.find((m) => m.id === activeMajor)!.label}`
-                    : ''}
-                </Text>
-              )}
-              <Text style={styles.rightSub}>
-                {activeUni?.nameJp}
-                {layer === 'grad'
-                  ? ` · 共 ${activeEntry?.grads.length ?? 0} 个研究科`
-                  : ' · ' + (activeGradIsTarget ? '目标研究科' : '浏览研究科') + (isVip ? ' · Pro 已解锁全部' : activeGradIsTarget ? ' · 近 3 年免费' : ' · 每套看广告解锁 24h')}
+              <Text style={styles.rightGrad}>
+                {activeEntry.gradSchool}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
               </Text>
+              <Text style={styles.rightSub}>{yearGroups.length} 个年度 · {pool.length} 道题</Text>
 
-              {/* 面包屑 */}
-              {layer !== 'grad' && (
-                <View style={styles.crumbRow}>
-                  <Pressable onPress={() => { setActiveGrad(null); setActiveMajor(null); }}>
-                    <Text style={styles.crumbLink}>研究科</Text>
-                  </Pressable>
-                  <Text style={styles.crumbSep}>/</Text>
-                  {layer === 'paper' && majorOptions.length > 0 ? (
-                    <>
-                      <Pressable onPress={() => setActiveMajor(null)}>
-                        <Text style={styles.crumbLink}>专业</Text>
-                      </Pressable>
-                      <Text style={styles.crumbSep}>/</Text>
-                      <Text style={styles.crumbCur}>年度卷</Text>
-                    </>
-                  ) : (
-                    <Text style={styles.crumbCur}>{layer === 'major' ? '专业' : '年度卷'}</Text>
-                  )}
+              {yearGroups.length === 0 ? (
+                <View style={styles.empty}>
+                  <Icon name="clock" size={28} color={Colors.textMuted} />
+                  <Text style={styles.emptyText}>该范围暂无真题</Text>
                 </View>
-              )}
-
-              {layer === 'grad' && (
-                (activeEntry?.grads.length ?? 0) === 0 ? (
-                  <View style={styles.empty}>
-                    <Icon name="layers" size={28} color={Colors.textMuted} />
-                    <Text style={styles.emptyText}>该校暂无添加研究科</Text>
-                  </View>
-                ) : (
-                  (activeEntry!.grads).map((g, i) => {
-                    const yearCount = new Set(KAKOMON_QUESTIONS
-                      .filter((q) => q.universityId === activeEntry!.universityId && q.graduateSchool === g)
-                      .map((q) => q.year)).size;
-                    const isTargetGrad = (user.targetSchools ?? []).some((s) =>
-                      s.universityId === activeEntry!.universityId && normGrad(activeEntry!.universityId, s.gradSchool) === g);
-                    const pickedMajors = (user.targetSchools ?? []).filter((s) =>
-                      s.universityId === activeEntry!.universityId &&
-                      normGrad(activeEntry!.universityId, s.gradSchool) === g &&
-                      s.majorId,
-                    ).length;
-                    return (
-                      <Pressable key={g} style={styles.listRow} onPress={() => { setActiveGrad(g); setActiveMajor(null); }}>
-                        <View style={[styles.listAccent, { backgroundColor: [Colors.indigo500, Colors.blue500, Colors.teal500, Colors.amber500, Colors.rose500][i % 5] }]} />
-                        <View style={styles.listMain}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.listName}>{g}</Text>
-                            {isTargetGrad && <Text style={styles.targetTag}>目标</Text>}
-                          </View>
-                          <Text style={styles.listSub}>{pickedMajors > 0 ? `${pickedMajors} 个目标专业 · ` : ''}{yearCount} 套年度卷</Text>
-                        </View>
-                        <Icon name="chevronRight" size={16} color={Colors.textMuted} />
-                      </Pressable>
-                    );
-                  })
-                )
-              )}
-
-              {layer === 'major' && (
-                majorOptions.map((mj, i) => {
-                  const count = majorCounts.get(mj.id) ?? 0;
-                  const yearCount = new Set(
-                    gradPool
-                      .filter((q) => !q.majorIds || q.majorIds.length === 0 || q.majorIds.includes(mj.id))
-                      .map((q) => q.year),
-                  ).size;
+              ) : (
+                yearGroups.map((yg) => {
+                  const selected = getSelectedSubject(yg.year, yg.subjects);
+                  const isOpen = yearDropdownOpen === yg.year;
+                  const subjectQs = yg.questions.filter((q) => q.subject === selected);
+                  const access = canAccessQuestion(user, { universityId: activeEntry.universityId, gradSchool: activeEntry.gradSchool, year: yg.year });
+                  const unlocked = access.allowed;
                   return (
-                    <Pressable
-                      key={mj.id}
-                      style={styles.listRow}
-                      onPress={() => setActiveMajor(mj.id)}
-                    >
-                      <View style={[styles.listAccent, { backgroundColor: [Colors.indigo500, Colors.blue500, Colors.teal500, Colors.amber500, Colors.rose500][i % 5] }]} />
-                      <View style={styles.listMain}>
-                        <Text style={styles.listName}>{mj.label} <Text style={{ color: Colors.textMuted, fontWeight: Typography.weightMedium }}>· {mj.short}</Text></Text>
-                        <Text style={styles.listSub}>{mj.desc || '—'} · {yearCount} 套年度卷 · {count} 题</Text>
+                    <View key={yg.year} style={styles.paperCard}>
+                      <View style={styles.paperTop}>
+                        <Text style={styles.paperYear}>{yg.year} 年度</Text>
+                        <Text style={styles.paperMeta}>{yg.questions.length} 题</Text>
                       </View>
-                      <Icon name="chevronRight" size={16} color={Colors.textMuted} />
-                    </Pressable>
+
+                      {/* 科目下拉 */}
+                      <Pressable style={styles.subjectDropdown} onPress={() => setYearDropdownOpen(isOpen ? null : yg.year)}>
+                        <Text style={styles.subjectDropdownText}>{selected || '选择科目'}</Text>
+                        <Icon name={isOpen ? 'chevronUp' : 'chevronDown'} size={13} color={Colors.textPrimary} />
+                      </Pressable>
+
+                      {isOpen && (
+                        <View style={styles.subjectMenu}>
+                          {yg.subjects.map((subj, i) => {
+                            const isActive = subj === selected;
+                            return (
+                              <Pressable
+                                key={subj}
+                                style={[styles.subjectMenuItem, isActive && styles.subjectMenuItemActive, i === yg.subjects.length - 1 && styles.subjectMenuItemLast]}
+                                onPress={() => selectYearSubject(yg.year, subj)}
+                              >
+                                <Text style={[styles.subjectMenuItemText, isActive && styles.subjectMenuItemTextActive]}>{subj}</Text>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      )}
+
+                      <Text style={styles.questionCount}>{selected}：{subjectQs.length} 道题</Text>
+
+                      {access.viaAd && (
+                        <View style={styles.unlockedBadge}>
+                          <Icon name="check" size={9} color={Colors.green600} />
+                          <Text style={styles.unlockedText}>已解锁 · 24h</Text>
+                        </View>
+                      )}
+                      {unlocked && !access.viaVip && !access.viaAd && (
+                        <View style={styles.unlockedBadge}>
+                          <Icon name="check" size={9} color={Colors.green600} />
+                          <Text style={styles.unlockedText}>目标研究科 · 免费</Text>
+                        </View>
+                      )}
+
+                      {unlocked ? (
+                        <Pressable style={styles.startBtn} onPress={() => startExam(yg.year, selected)}>
+                          <Icon name="clock" size={14} color="#fff" />
+                          <Text style={styles.startBtnText}>开始模考（{subjectQs.length} 题）</Text>
+                        </Pressable>
+                      ) : (
+                        <Pressable style={styles.lockBtn} onPress={() => handleExamPress(yg.year, selected)}>
+                          <Icon name="eye" size={14} color="#fff" />
+                          <Text style={styles.lockBtnText}>看广告解锁（24h）</Text>
+                        </Pressable>
+                      )}
+                    </View>
                   );
                 })
-              )}
-
-              {layer === 'paper' && (
-                papers.length === 0 ? (
-                  <View style={styles.empty}>
-                    <Icon name="clock" size={28} color={Colors.textMuted} />
-                    <Text style={styles.emptyText}>该范围暂无整套真题</Text>
-                  </View>
-                ) : (
-                  papers.map((p) => {
-                    const access = canAccessQuestion(user, { universityId: p.universityId, gradSchool: p.gradSchool, year: p.year });
-                    const unlocked = access.allowed;
-                    const freeByTarget = unlocked && !access.viaVip && !access.viaAd;
-                    return (
-                      <PaperCard
-                        key={p.year}
-                        paper={p}
-                        unlocked={unlocked}
-                        freeByTarget={freeByTarget}
-                        viaAd={!!access.viaAd}
-                        styles={styles}
-                        Colors={Colors}
-                        onStart={handleStart}
-                        onLockedPress={handleLockedPress}
-                      />
-                    );
-                  })
-                )
               )}
               <View style={{ height: 24 }} />
             </ScrollView>
           )}
         </View>
       </View>
+
+      {/* 「⋮」菜单 */}
+      <Modal visible={!!menuFor} transparent animationType="fade" onRequestClose={() => setMenuFor(null)}>
+        <Pressable style={styles.menuOverlay} onPress={() => setMenuFor(null)}>
+          <Pressable style={styles.menuCard} onPress={() => {}}>
+            {menuFor && (() => {
+              const group = menuFor.isTarget ? targetEntries : browseEntries;
+              const idx = group.findIndex((e) => e.key === menuFor.key);
+              const u = KAKOMON_UNIVERSITIES.find((x) => x.id === menuFor.universityId);
+              return (
+                <>
+                  <Text style={styles.menuTitle}>
+                    {u?.short} · {gradShort(menuFor.gradSchool)}{menuFor.majorLabel ? ` · ${menuFor.majorLabel}` : ''}
+                  </Text>
+                  <Pressable style={styles.menuItem} disabled={idx <= 0} onPress={() => moveEntry(menuFor, 'up')}>
+                    <Icon name="chevronUp" size={15} color={idx <= 0 ? Colors.textMuted : Colors.textPrimary} />
+                    <Text style={[styles.menuItemText, idx <= 0 && { color: Colors.textMuted }]}>上移</Text>
+                  </Pressable>
+                  <Pressable style={styles.menuItem} disabled={idx >= group.length - 1} onPress={() => moveEntry(menuFor, 'down')}>
+                    <Icon name="chevronDown" size={15} color={idx >= group.length - 1 ? Colors.textMuted : Colors.textPrimary} />
+                    <Text style={[styles.menuItemText, idx >= group.length - 1 && { color: Colors.textMuted }]}>下移</Text>
+                  </Pressable>
+                  <View style={styles.menuSep} />
+                  <Pressable style={styles.menuItem} onPress={() => deleteEntry(menuFor)}>
+                    <Icon name="close" size={15} color={Colors.rose600} />
+                    <Text style={[styles.menuItemText, styles.menuItemDanger]}>删除</Text>
+                  </Pressable>
+                </>
+              );
+            })()}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* 添加：选学校 → 选研究科 */}
       <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
@@ -676,53 +540,34 @@ export default function MockExamScreen() {
               )}
               <Text style={styles.modalTitle}>
                 {addStep === 'school'
-                  ? (addMode === 'target' ? '添加目标校 · 选择学校' : '浏览学校 · 选择学校')
+                  ? (addMode === 'target' ? '添加目标 · 选择学校' : '浏览 · 选择学校')
                   : `${pendingUniObj?.short} · 选择研究科`}
               </Text>
-              <Pressable onPress={() => setAddOpen(false)}>
-                <Icon name="close" size={18} color={Colors.textMuted} />
-              </Pressable>
+              <Pressable onPress={() => setAddOpen(false)}><Icon name="close" size={18} color={Colors.textMuted} /></Pressable>
             </View>
-
             {addStep === 'school' ? (
               <>
                 <View style={styles.searchBar}>
                   <Icon name="search" size={15} color={Colors.textMuted} />
-                  <TextInput
-                    style={styles.searchInput}
-                    value={addQuery}
-                    onChangeText={setAddQuery}
-                    placeholder="搜索学校名"
-                    placeholderTextColor={Colors.textMuted}
-                    autoCorrect={false}
-                  />
+                  <TextInput style={styles.searchInput} value={addQuery} onChangeText={setAddQuery} placeholder="搜索学校名" placeholderTextColor={Colors.textMuted} autoCorrect={false} />
                 </View>
                 <ScrollView keyboardShouldPersistTaps="handled">
-                  {addCandidates.map((u) => {
-                    const bg = accent500[u.accent] ?? Colors.indigo500;
-                    return (
-                      <Pressable
-                        key={u.id}
-                        style={styles.uniRow}
-                        onPress={() => { setPendingUni(u.id); setAddStep('grad'); }}
-                      >
-                        <View style={[styles.uniRowAvatar, { backgroundColor: bg }]}>
-                          <Text style={styles.railAvatarText}>{u.short.slice(0, 1)}</Text>
-                        </View>
-                        <Text style={styles.uniRowName}>{u.short} · {u.nameJp}</Text>
-                        <Icon name="chevronRight" size={16} color={Colors.textMuted} />
-                      </Pressable>
-                    );
-                  })}
+                  {addCandidates.map((u) => (
+                    <Pressable key={u.id} style={styles.uniRow} onPress={() => { setPendingUni(u.id); setAddStep('grad'); }}>
+                      <View style={[styles.uniRowAvatar, { backgroundColor: accent500[u.accent] ?? Colors.indigo500 }]}>
+                        <Text style={styles.railAvatarText}>{u.short.slice(0, 1)}</Text>
+                      </View>
+                      <Text style={styles.uniRowName}>{u.short} · {u.nameJp}</Text>
+                      <Icon name="chevronRight" size={16} color={Colors.textMuted} />
+                    </Pressable>
+                  ))}
                   <View style={{ height: 32 }} />
                 </ScrollView>
               </>
             ) : (
               <ScrollView keyboardShouldPersistTaps="handled">
                 {pendingGrads.length === 0 ? (
-                  <View style={styles.empty}>
-                    <Text style={styles.emptyText}>该校研究科信息整理中</Text>
-                  </View>
+                  <View style={styles.empty}><Text style={styles.emptyText}>该校研究科信息整理中</Text></View>
                 ) : (
                   pendingGrads.map((g) => {
                     const added = !!pendingUni && (
@@ -732,11 +577,7 @@ export default function MockExamScreen() {
                     return (
                       <Pressable key={g} style={styles.gradRow} onPress={() => pickGrad(g)}>
                         <Text style={styles.gradName}>{g}</Text>
-                        {added ? (
-                          <Text style={styles.gradAdded}>已添加</Text>
-                        ) : (
-                          <Icon name="plus" size={16} color={Colors.indigo500} />
-                        )}
+                        {added ? <Text style={styles.gradAdded}>已添加</Text> : <Icon name="plus" size={16} color={Colors.indigo500} />}
                       </Pressable>
                     );
                   })
@@ -748,53 +589,17 @@ export default function MockExamScreen() {
         </Pressable>
       </Modal>
 
-      {/* 「⋮」操作菜单：学校级 */}
-      <Modal visible={!!menuFor} transparent animationType="fade" onRequestClose={() => setMenuFor(null)}>
-        <Pressable style={styles.menuOverlay} onPress={() => setMenuFor(null)}>
-          <Pressable style={styles.menuCard} onPress={() => {}}>
-            {menuFor && (() => {
-              const group = menuFor.isTarget ? targetEntries : browseEntries;
-              const idx = group.findIndex((e) => e.universityId === menuFor.universityId);
-              const u = KAKOMON_UNIVERSITIES.find((x) => x.id === menuFor.universityId);
-              return (
-                <>
-                  <Text style={styles.menuTitle}>
-                    {u?.short} · {menuFor.grads.length} 个研究科（{menuFor.isTarget ? '目标校' : '浏览校'}）
-                  </Text>
-                  <Pressable style={styles.menuItem} disabled={idx <= 0} onPress={() => moveEntry(menuFor, 'top')}>
-                    <Icon name="chevronUp" size={15} color={idx <= 0 ? Colors.textMuted : Colors.textPrimary} />
-                    <Text style={[styles.menuItemText, idx <= 0 && { color: Colors.textMuted }]}>置顶</Text>
-                  </Pressable>
-                  <Pressable style={styles.menuItem} disabled={idx <= 0} onPress={() => moveEntry(menuFor, 'up')}>
-                    <Icon name="chevronUp" size={15} color={idx <= 0 ? Colors.textMuted : Colors.textPrimary} />
-                    <Text style={[styles.menuItemText, idx <= 0 && { color: Colors.textMuted }]}>上移</Text>
-                  </Pressable>
-                  <Pressable style={styles.menuItem} disabled={idx >= group.length - 1} onPress={() => moveEntry(menuFor, 'down')}>
-                    <Icon name="chevronDown" size={15} color={idx >= group.length - 1 ? Colors.textMuted : Colors.textPrimary} />
-                    <Text style={[styles.menuItemText, idx >= group.length - 1 && { color: Colors.textMuted }]}>下移</Text>
-                  </Pressable>
-                  <View style={styles.menuSep} />
-                  <Pressable style={styles.menuItem} onPress={() => deleteEntry(menuFor)}>
-                    <Icon name="close" size={15} color={Colors.rose600} />
-                    <Text style={[styles.menuItemText, styles.menuItemDanger]}>删除该校全部研究科</Text>
-                  </Pressable>
-                </>
-              );
-            })()}
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* 广告解锁（校×年 24h） */}
+      {/* 广告解锁 */}
       {gate && (
         <AdGateModal
           open={!!gate}
           onClose={() => setGate(null)}
-          title={`解锁 ${gate.uniShort} ${gate.year} 模考`}
-          desc={`看广告解锁 ${gate.uniShort} ${gate.year} 年整套真题 · 24 小时内可反复模考`}
+          title={`解锁 ${activeUni?.short ?? ''} ${gate.year} 年 ${gate.subject}`}
+          desc={`看广告解锁 ${activeUni?.short ?? ''} ${gate.year} 年题目 · 24 小时内有效`}
           onUnlock={() => {
-            unlockSchoolYear(gate.universityId, gate.year);
-            startExam(gate);
+            if (activeEntry) unlockSchoolYear(activeEntry.universityId, gate.year);
+            startExam(gate.year, gate.subject);
+            setGate(null);
           }}
           onUpgrade={() => router.push('/paywall' as any)}
         />
