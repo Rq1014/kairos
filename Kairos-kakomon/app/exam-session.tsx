@@ -13,6 +13,7 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
+import QuestionBlocks from '@/components/study/QuestionBlocks';
 import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES } from '@/mocks/data';
 import { useAttemptStore } from '@/store/attemptStore';
 import type { ExamResult } from '@/types/attempt';
@@ -168,7 +169,10 @@ export default function ExamSessionScreen() {
           </Text>
           <Text style={styles.qTitle}>{current.title}</Text>
           <View style={styles.qBodyCard}>
-            <Text style={styles.qBody}>{current.bodyText ?? '（本题暂无题干文本，请参考原题图片作答。考试模式下不显示解析。）'}</Text>
+            <QuestionBlocks
+              blocks={current.contentBlocks}
+              fallbackText={current.bodyText ?? '（本题暂无题干文本，请参考原题图片作答。考试模式下不显示解析。）'}
+            />
           </View>
           <Text style={styles.examHint}>考试模式：请在纸上作答，交卷后自行批改打分</Text>
 
