@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -44,6 +44,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   qBody: { fontSize: Typography.sm, color: c.textSecondary, lineHeight: Typography.sm * 1.6 },
   qBodyCard: { backgroundColor: c.surface, borderRadius: Spacing.cardRadius, borderWidth: 1, borderColor: c.border, padding: Spacing.cardPadding, gap: 6 },
   examHint: { fontSize: Typography.xs, color: c.textMuted, marginTop: 12, textAlign: 'center' },
+  selectRuleHint: { fontSize: Typography.xs, color: c.amber500, textAlign: 'center', paddingHorizontal: Spacing.screenPadding, marginBottom: 4 },
 
   navRow: { flexDirection: 'row', gap: 8, marginTop: 16 },
   navBtn: { flex: 1, borderRadius: 10, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: c.border },
@@ -77,7 +78,7 @@ export default function ExamSessionScreen() {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
-  const params = useLocalSearchParams<{ title?: string; ids?: string; universityId?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ title?: string; ids?: string; universityId?: string; mode?: string; durationMinutes?: string; selectTotal?: string; selectChoose?: string }>();
   const recordExamResult = useAttemptStore((s) => s.recordExamResult);
 
   const questions: KakomonQuestion[] = useMemo(() => {
@@ -90,11 +91,29 @@ export default function ExamSessionScreen() {
   const title = params.title ?? '模拟考试';
   const mode = (params.mode === 'topic' ? 'topic' : params.mode === 'custom' ? 'custom' : 'mock') as ExamResult['mode'];
 
+  const durationMinutes = params.durationMinutes ? Number(params.durationMinutes) : null;
+  const selectTotal = params.selectTotal ? Number(params.selectTotal) : null;
+  const selectChoose = params.selectChoose ? Number(params.selectChoose) : null;
+
   const [phase, setPhase] = useState<Phase>('answer');
   const [idx, setIdx] = useState(0);
   // 自评结果：questionId → 是否做对
   const [grades, setGrades] = useState<Record<string, boolean>>({});
   const [savedId, setSavedId] = useState<string | null>(null);
+
+  const [remainingSec, setRemainingSec] = useState<number | null>(
+    durationMinutes ? durationMinutes * 60 : null,
+  );
+  useEffect(() => {
+    if (phase !== 'answer' || remainingSec === null) return;
+    if (remainingSec <= 0) return;
+    const t = setInterval(() => setRemainingSec((s) => (s === null ? s : Math.max(0, s - 1))), 1000);
+    return () => clearInterval(t);
+  }, [phase, remainingSec]);
+
+  const clock = remainingSec === null
+    ? null
+    : `${String(Math.floor(remainingSec / 60)).padStart(2, '0')}:${String(remainingSec % 60).padStart(2, '0')}`;
 
   if (questions.length === 0) {
     return (
@@ -140,7 +159,9 @@ export default function ExamSessionScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{title}</Text>
           <Text style={styles.headerSub}>
-            {phase === 'answer' ? `答题中 · ${idx + 1}/${questions.length}` : phase === 'grade' ? '自评批改' : '成绩'}
+            {phase === 'answer'
+              ? `答题中 · ${idx + 1}/${questions.length}${clock ? ` · ⏱ ${clock}` : ''}`
+              : phase === 'grade' ? '自评批改' : '成绩'}
           </Text>
         </View>
       </View>
@@ -159,6 +180,10 @@ export default function ExamSessionScreen() {
           />
         ))}
       </View>
+
+      {phase === 'answer' && selectTotal && selectChoose && (
+        <Text style={styles.selectRuleHint}>本卷 {selectTotal} 题中任选 {selectChoose} 题作答</Text>
+      )}
 
       {/* ── Answer phase ── */}
       {phase === 'answer' && (
