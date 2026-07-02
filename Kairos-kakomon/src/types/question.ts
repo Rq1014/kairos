@@ -27,6 +27,12 @@ export interface KakomonQuestion {
   referenceMatches?: ReferenceMatch[];
   relatedQuestions?: RelatedQuestion[];
   hasOriginalImage?: boolean;
+  /** 结构化题干内容块（优先渲染；缺省时回退 bodyText）。 */
+  contentBlocks?: ContentBlock[];
+  /** 所属试卷 id（模考按试卷组织）。 */
+  paperId?: string;
+  /** 大问在试卷内的顺序。 */
+  orderIndex?: number;
 }
 
 export interface ExplanationStep {
@@ -110,4 +116,31 @@ export interface ReferenceChapter {
   questionCount: number;
   knowledgePoints: string[];
   hot?: boolean;
+}
+
+export type ContentBlock =
+  | { type: 'text'; content: string }
+  | { type: 'math'; latex: string }
+  | { type: 'image'; url: string; caption?: string }
+  | { type: 'table'; rows: string[][]; caption?: string };
+
+/** 一份完整试卷（大学×研究科×年份×科目），下辖多个大问。 */
+export interface ExamPaper {
+  id: string;
+  universityId: string;
+  graduateSchool: string;
+  majorId?: string | null;
+  year: number;
+  subject: string;
+  /** 展示标题，如「平成29年度 大学院入学試験問題 数学」。 */
+  title: string;
+  /** 考试时长（分钟），用于模考倒计时。 */
+  durationMinutes?: number;
+  totalScore?: number | null;
+  /** 选做规则，如 6 問中 3 問選択 → { total: 6, choose: 3 }。 */
+  selectRule?: { total: number; choose: number };
+  /** 注意事项文本数组。 */
+  instructions?: string[];
+  /** 大问 id 顺序。 */
+  questionIds: string[];
 }
