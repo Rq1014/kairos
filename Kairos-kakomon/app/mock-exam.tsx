@@ -16,12 +16,12 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, KAKOMON_PAPERS } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
 import { canAccessQuestion, schoolLimit } from '@/utils/accessPolicy';
-import type { KakomonQuestion } from '@/types/question';
+import type { KakomonQuestion, ExamPaper } from '@/types/question';
 
 /**
  * 左栏一项 = 学校 + 研究科 + 专业（平铺）。
@@ -235,6 +235,16 @@ export default function MockExamScreen() {
       }));
   }, [pool]);
 
+  const papersForEntry = useMemo(() => {
+    if (!activeEntry) return [] as ExamPaper[];
+    return KAKOMON_PAPERS.filter(
+      (p) => p.universityId === activeEntry.universityId && p.graduateSchool === activeEntry.gradSchool,
+    );
+  }, [activeEntry]);
+
+  const findPaper = (year: number, subject: string) =>
+    papersForEntry.find((p) => p.year === year && p.subject === subject) ?? null;
+
   function getSelectedSubject(year: number, subjects: string[]): string {
     return yearSubjectMap[year] ?? subjects[0] ?? '';
   }
@@ -249,7 +259,11 @@ export default function MockExamScreen() {
     const qs = pool.filter((q) => q.year === year && q.subject === subject);
     if (qs.length === 0) return;
     const ids = qs.map((q) => q.id).join(',');
-    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subject}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}` as any);
+    const paper = findPaper(year, subject);
+    const extra = paper
+      ? `${paper.durationMinutes ? `&durationMinutes=${paper.durationMinutes}` : ''}${paper.selectRule ? `&selectTotal=${paper.selectRule.total}&selectChoose=${paper.selectRule.choose}` : ''}`
+      : '';
+    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subject}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}${extra}` as any);
   }
 
   // 广告门
@@ -459,6 +473,16 @@ export default function MockExamScreen() {
                       )}
 
                       <Text style={styles.questionCount}>{selected}：{subjectQs.length} 道题</Text>
+                      {(() => {
+                        const paper = findPaper(yg.year, selected);
+                        if (!paper) return null;
+                        return (
+                          <Text style={styles.paperMeta}>
+                            {paper.durationMinutes ? `⏱ ${paper.durationMinutes} 分` : ''}
+                            {paper.selectRule ? `　·　${paper.selectRule.total} 题选 ${paper.selectRule.choose}` : ''}
+                          </Text>
+                        );
+                      })()}
 
                       {access.viaAd && (
                         <View style={styles.unlockedBadge}>
