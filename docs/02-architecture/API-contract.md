@@ -376,7 +376,7 @@ Free 用户访问 Pro-gated 内容时，**不返回 403**，而是在响应体�
 }
 ```
 
-### 2.10 GET /papers（试卷列表 · 模考首页）
+### 2.11 GET /papers（试卷列表 · 模考首页）
 
 Query: `universityId`（必填）, `graduateSchool`（必填）
 
@@ -392,7 +392,7 @@ Query: `universityId`（必填）, `graduateSchool`（必填）
 }
 ```
 
-### 2.11 GET /papers/{code}（单份试卷）
+### 2.12 GET /papers/{code}（单份试卷）
 
 ```json
 {
@@ -407,7 +407,7 @@ Query: `universityId`（必填）, `graduateSchool`（必填）
 }
 ```
 
-### 2.12 GET /questions（大问筛选 · 分页）
+### 2.13 GET /questions（大问筛选 · 分页）
 
 Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?`, `keyword?`, `page=1`, `pageSize=20`。列表项**不含** `contentBlocks`。
 
@@ -420,7 +420,7 @@ Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?
 }
 ```
 
-### 2.13 GET /questions/{code}（大问详情 · 含 contentBlocks）
+### 2.14 GET /questions/{code}（大问详情 · 含 contentBlocks）
 
 ```json
 {
@@ -436,7 +436,7 @@ Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?
 }
 ```
 
-### 2.14 GET /questions/{code}/related（举一反三）
+### 2.15 GET /questions/{code}/related（举一反三）
 
 ```json
 {
