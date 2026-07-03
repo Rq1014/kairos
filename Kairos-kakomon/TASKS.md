@@ -1188,3 +1188,15 @@
 - [x] 门禁：npm run type-check 通过；npm run lint 0 error（既有 warning 属 WIP 基线，非本期文件）
   ✅ 完成于 2026-07-02，静态走查渲染链路通过；未做实机验证（本环境无已启动模拟器），需在真机/模拟器人工确认公式渲染与倒计时
 - [ ] 后端落库（MySQL + MyBatis）为 Phase 2，另立计划
+
+## 2026-07-03 任务：专题学习/模考 Phase 2（后端落库 MySQL + MyBatis）
+
+- [x] V1_4 建表（exam_paper / question / question_knowledge_point / question_relation） + V1_5 东大 2024 数学样例种子
+  ✅ 完成于 2026-07-03
+- [x] question 模块 backend（Entity / Mapper + XML / Service / Controller） + ResultCode 106xx
+  ✅ 完成于 2026-07-03
+- [x] 补齐 API-contract.md `/papers` `/questions` 契约（2.10–2.14）
+  ✅ 完成于 2026-07-03
+- [x] 门禁 ./mvnw compile 通过；curl 冒烟未执行（本环境无 DB 凭据，待联调环境验证）
+  ✅ 完成于 2026-07-03
+- [ ] Phase 3：前端 `questions.ts` / `papers.ts` 切 `apiRequest`（另立计划）

@@ -376,6 +376,78 @@ Free 用户访问 Pro-gated 内容时，**不返回 403**，而是在响应体�
 }
 ```
 
+### 2.10 GET /papers（试卷列表 · 模考首页）
+
+Query: `universityId`（必填）, `graduateSchool`（必填）
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": [
+    { "id": "p-todai-2024-math", "year": 2024, "subject": "数学",
+      "title": "2024年度 大学院入学試験問題 数学",
+      "durationMinutes": 150, "selectRule": { "total": 3, "choose": 2 },
+      "questionCount": 3 }
+  ]
+}
+```
+
+### 2.11 GET /papers/{code}（单份试卷）
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": {
+    "id": "p-todai-2024-math", "universityId": "todai",
+    "graduateSchool": "情报理工学系研究科", "year": 2024, "subject": "数学",
+    "durationMinutes": 150, "selectRule": { "total": 3, "choose": 2 },
+    "instructions": ["…"],
+    "questions": [ { "id": "q-todai-2024-math-1", "questionNo": "第1问", "title": "…", "orderIndex": 1 } ]
+  }
+}
+```
+
+### 2.12 GET /questions（大问筛选 · 分页）
+
+Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?`, `keyword?`, `page=1`, `pageSize=20`。列表项**不含** `contentBlocks`。
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": { "items": [ { "id": "q-todai-2024-math-3", "title": "…", "questionNo": "第3问",
+                         "knowledgePoints": ["线性代数","固有值"] } ],
+            "total": 3, "page": 1, "pageSize": 20, "hasMore": false }
+}
+```
+
+### 2.13 GET /questions/{code}（大问详情 · 含 contentBlocks）
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": {
+    "id": "q-todai-2024-math-3", "paperId": "p-todai-2024-math",
+    "universityId": "todai", "graduateSchool": "情报理工学系研究科",
+    "year": 2024, "subject": "数学", "questionNo": "第3问", "title": "…",
+    "contentBlocks": [ { "type": "text", "content": "…" },
+                       { "type": "math", "latex": "A v_1 = 2 v_1" } ],
+    "knowledgePoints": ["线性代数","固有值"]
+  }
+}
+```
+
+### 2.14 GET /questions/{code}/related（举一反三）
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": [ { "id": "q-todai-2024-math-2", "title": "…", "level": 2,
+              "matchType": "same_point", "reason": "同为固有值考点" } ]
+}
+```
+
+> 错误码：试卷/题目不存在 → `10601` / `10602`。以上读接口均公开（`@PublicApi`），付费门禁由前端判定。
+
 ### 2.10 POST /ai/chat/:sessionId（追问）
 
 ```json
