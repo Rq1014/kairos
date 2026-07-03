@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.ExamPaperMapper">
+
+    <resultMap id="PaperMap" type="org.example.kairos.entity.ExamPaperEntity">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="university_code" property="universityCode"/>
+        <result column="grad_school_code" property="gradSchoolCode"/>
+        <result column="major_code" property="majorCode"/>
+        <result column="year" property="year"/>
+        <result column="subject" property="subject"/>
+        <result column="title" property="title"/>
+        <result column="duration_minutes" property="durationMinutes"/>
+        <result column="total_score" property="totalScore"/>
+        <result column="select_rule" property="selectRule"/>
+        <result column="instructions" property="instructions"/>
+        <result column="source_pdf_key" property="sourcePdfKey"/>
+        <result column="status" property="status"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <select id="findByCode" resultMap="PaperMap">
+        SELECT * FROM exam_paper WHERE code = #{code} AND status = 1
+    </select>
+
+    <select id="findByScope" resultMap="PaperMap">
+        SELECT * FROM exam_paper
+        WHERE status = 1
+          AND university_code = #{universityCode}
+          AND grad_school_code = #{gradSchoolCode}
+        ORDER BY year DESC, sort_order DESC, id ASC
+    </select>
+</mapper>

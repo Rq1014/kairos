@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.QuestionRelationMapper">
+
+    <resultMap id="RelMap" type="org.example.kairos.entity.QuestionRelationEntity">
+        <id column="id" property="id"/>
+        <result column="from_question_code" property="fromQuestionCode"/>
+        <result column="to_question_code" property="toQuestionCode"/>
+        <result column="level" property="level"/>
+        <result column="match_type" property="matchType"/>
+        <result column="reason" property="reason"/>
+        <result column="confidence" property="confidence"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <select id="findFrom" resultMap="RelMap">
+        SELECT * FROM question_relation
+        WHERE from_question_code = #{fromQuestionCode}
+        ORDER BY level ASC, confidence DESC, id ASC
+    </select>
+</mapper>

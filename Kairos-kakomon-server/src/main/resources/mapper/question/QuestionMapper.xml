@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.QuestionMapper">
+
+    <resultMap id="QMap" type="org.example.kairos.entity.QuestionEntity">
+        <id column="id" property="id"/>
+        <result column="code" property="code"/>
+        <result column="paper_code" property="paperCode"/>
+        <result column="university_code" property="universityCode"/>
+        <result column="grad_school_code" property="gradSchoolCode"/>
+        <result column="year" property="year"/>
+        <result column="subject" property="subject"/>
+        <result column="question_no" property="questionNo"/>
+        <result column="title" property="title"/>
+        <result column="order_index" property="orderIndex"/>
+        <result column="content_blocks" property="contentBlocks"/>
+        <result column="body_text" property="bodyText"/>
+        <result column="difficulty_label" property="difficultyLabel"/>
+        <result column="difficulty_level" property="difficultyLevel"/>
+        <result column="crowd_difficulty_rate" property="crowdDifficultyRate"/>
+        <result column="crowd_votes" property="crowdVotes"/>
+        <result column="status" property="status"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_at" property="updatedAt"/>
+    </resultMap>
+
+    <!-- 列表列集合: 不含 content_blocks / body_text 大字段 -->
+    <sql id="listCols">
+        id, code, paper_code, university_code, grad_school_code, year, subject,
+        question_no, title, order_index, difficulty_label, difficulty_level,
+        crowd_difficulty_rate, crowd_votes, status, created_at, updated_at
+    </sql>
+
+    <select id="findByCode" resultMap="QMap">
+        SELECT * FROM question WHERE code = #{code} AND status = 1
+    </select>
+
+    <select id="findByPaperCode" resultMap="QMap">
+        SELECT * FROM question
+        WHERE paper_code = #{paperCode} AND status = 1
+        ORDER BY order_index ASC, id ASC
+    </select>
+
+    <sql id="filter">
+        <where>
+            q.status = 1
+            <if test="universityCode != null and universityCode != ''">AND q.university_code = #{universityCode}</if>
+            <if test="gradSchoolCode != null and gradSchoolCode != ''">AND q.grad_school_code = #{gradSchoolCode}</if>
+            <if test="year != null">AND q.year = #{year}</if>
+            <if test="subject != null and subject != ''">AND q.subject = #{subject}</if>
+            <if test="keyword != null and keyword != ''">
+                AND (q.title LIKE CONCAT('%', #{keyword}, '%') OR q.body_text LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="knowledgePoint != null and knowledgePoint != ''">
+                AND EXISTS (SELECT 1 FROM question_knowledge_point kp
+                            WHERE kp.question_code = q.code AND kp.knowledge_point = #{knowledgePoint})
+            </if>
+        </where>
+    </sql>
+
+    <select id="findByFilter" resultMap="QMap">
+        SELECT <include refid="listCols"/>
+        FROM question q
+        <include refid="filter"/>
+        ORDER BY q.year DESC, q.order_index ASC, q.id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByFilter" resultType="long">
+        SELECT COUNT(*) FROM question q
+        <include refid="filter"/>
+    </select>
+
+    <select id="findKnowledgePoints" resultType="string">
+        SELECT knowledge_point FROM question_knowledge_point
+        WHERE question_code = #{questionCode} ORDER BY id ASC
+    </select>
+</mapper>
