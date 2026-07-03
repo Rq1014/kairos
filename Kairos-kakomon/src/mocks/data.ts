@@ -427,6 +427,9 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   { id: 'q-todai-2025-math-2', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['mi', 'cs'], year: 2025, subject: '数学', questionNo: '第2问', title: '二次型与正定性判定', knowledgePoints: ['线性代数', '二次型', '正定矩阵'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.54, masteryStatus: null },
   { id: 'q-todai-2025-info-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'ii'], year: 2025, subject: '情报', questionNo: '第1问', title: '图算法：最短路与 Dijkstra', knowledgePoints: ['算法', '图论', '最短路'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.66, masteryStatus: null },
   { id: 'q-todai-2022-math-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['mi', 'cs', 'si'], year: 2022, subject: '数学', questionNo: '第1问', title: '傅里叶级数展开', knowledgePoints: ['微积分', '傅里叶级数', '周期函数'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.57, masteryStatus: null },
+  // 东大 2024 数学：与 q-todai-2024-math-3 同卷，凑齐一张「6问选3」类整卷（此处 3 问选 2）供模考演示
+  { id: 'q-todai-2024-math-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'mi', 'si'], year: 2024, subject: '数学', questionNo: '第1问', paperId: 'p-todai-2024-math', orderIndex: 1, title: '定积分与常微分方程', bodyText: '（1）以下の定積分を求めよ。\n（2）微分方程式の一般解と特異解を求めよ。', knowledgePoints: ['微积分', '定积分', '微分方程'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.5, masteryStatus: null },
+  { id: 'q-todai-2024-math-2', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'mi', 'si'], year: 2024, subject: '数学', questionNo: '第2问', paperId: 'p-todai-2024-math', orderIndex: 2, title: '3 次正方行列的固有值与幂', bodyText: '3 次正方行列 A について、固有値をすべて求め、Aⁿ を求めよ。', knowledgePoints: ['线性代数', '固有值', '矩阵幂'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.6, masteryStatus: null },
 
   // 东工大
   { id: 'q-titech-2026-math-1', universityId: 'titech', graduateSchool: '情报理工学院', majorIds: ['mcs', 'is', 'ai'], year: 2026, subject: '数学', questionNo: '第1问', title: '固有值问题与对角化', knowledgePoints: ['线性代数', '固有值', '对角化'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.64, masteryStatus: null },
@@ -811,11 +814,11 @@ export const KAKOMON_PAPERS: ExamPaper[] = [
     title: '2024年度 大学院入学試験問題 数学',
     durationMinutes: 150,
     totalScore: null,
-    selectRule: { total: 3, choose: 3 },
+    selectRule: { total: 3, choose: 2 },
     instructions: [
       '試験開始の合図があるまで問題冊子を開かないこと。',
       '解答は日本語または英語で記述すること。',
     ],
-    questionIds: ['q-todai-2024-math-3', 'q-todai-2023-math-1'],
+    questionIds: ['q-todai-2024-math-1', 'q-todai-2024-math-2', 'q-todai-2024-math-3'],
   },
 ];
