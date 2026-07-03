@@ -12,6 +12,7 @@ package org.example.kairos.common;
  *   <li>10300~10399 - 用户资料/字典相关</li>
  *   <li>10400~10499 - 三方登录相关</li>
  *   <li>10500~10599 - 订单/支付相关</li>
+ *   <li>10600~10699 - 题目/试卷相关</li>
  * </ul>
  * 业务码与 HTTP 状态码解耦, HTTP 状态码由 {@code GlobalExceptionHandler} 统一映射。
  */
@@ -84,7 +85,12 @@ public enum ResultCode {
     /** 套餐类型不合法 */
     PLAN_INVALID(10503, "套餐不存在"),
     /** 支付渠道不合法 */
-    CHANNEL_INVALID(10504, "支付渠道不支持");
+    CHANNEL_INVALID(10504, "支付渠道不支持"),
+
+    /** 试卷不存在或已下线 */
+    PAPER_NOT_FOUND(10601, "试卷不存在"),
+    /** 题目不存在或已下线 */
+    QUESTION_NOT_FOUND(10602, "题目不存在");
 
     private final int code;
     private final String message;
