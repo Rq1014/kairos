@@ -244,8 +244,7 @@ export async function getUniversityMajors(params?: {
 > {
   if (params?.universityId && params.gradSchool) {
     try {
-      // 后端用 gradCode 查询，前端原 mock 用 nameJp。
-      // 简化：直接传 nameJp，后端在 grad_school.code 等于 nameJp 的项目中匹配（需要 seed 时保持一致）。
+      // params.gradSchool 现为研究科 code（Phase 1 已统一），直接作为 gradCode 传后端。
       const gradCode = params.gradSchool;
       const data = await apiRequest<{ universityId: string; gradSchoolId: string; items: RawMajor[] }>(
         `/api/dict/grad-schools/${encodeURIComponent(gradCode)}/majors`,
