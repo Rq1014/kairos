@@ -15,7 +15,7 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon, SchoolLogo } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, KAKOMON_SEARCH_RECENT, KAKOMON_SEARCH_HOT, DEMO_USER } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, KAKOMON_SEARCH_RECENT, KAKOMON_SEARCH_HOT, DEMO_USER, gradName } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { canAccessQuestion, lockHint, type LockReason } from '@/utils/accessPolicy';
@@ -94,7 +94,7 @@ function BrowseDrillDown({
         {grad && (
           <>
             <Text style={styles.crumbSep}>/</Text>
-            <Text style={styles.crumbCurrent} numberOfLines={1}>{grad}</Text>
+            <Text style={styles.crumbCurrent} numberOfLines={1}>{gradName(universityId, grad)}</Text>
           </>
         )}
       </View>
@@ -109,7 +109,7 @@ function BrowseDrillDown({
         ) : (
           gradList.map((g) => (
             <Pressable key={g.name} style={styles.gradRow} onPress={() => onPickGrad(g.name)}>
-              <Text style={styles.gradName} numberOfLines={1}>{g.name}</Text>
+              <Text style={styles.gradName} numberOfLines={1}>{gradName(universityId, g.name)}</Text>
               <Text style={styles.gradCount}>{g.count} 题</Text>
               <Icon name="chevronRight" size={16} color={Colors.textMuted} />
             </Pressable>

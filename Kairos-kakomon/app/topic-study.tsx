@@ -18,7 +18,7 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, GRAD_SCHOOL_NAMES } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, GRAD_SCHOOL_NAMES, gradName } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
 import { schoolLimit } from '@/utils/accessPolicy';
@@ -368,7 +368,7 @@ export default function TopicStudyScreen() {
             <ScrollView contentContainerStyle={styles.rightScroll} showsVerticalScrollIndicator={false}>
               <Text style={styles.rightTitle}>{activeUni?.nameCn}</Text>
               <Text style={styles.rightGrad}>
-                {activeEntry.gradSchool}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
+                {gradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
               </Text>
               <Text style={styles.rightSub}>{pool.length} 道题 · {subjects.length} 门专业课</Text>
 

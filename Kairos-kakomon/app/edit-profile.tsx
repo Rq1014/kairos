@@ -20,7 +20,7 @@ import { Spacing } from '@/constants/spacing';
 import { Avatar, Icon, WheelDatePicker } from '@/components/ui';
 import { EditTargetSheet } from '@/components/study/EditTargetSheet';
 import { useAuthStore } from '@/store/authStore';
-import { KAKOMON_UNIVERSITIES, DEMO_USER, UNI_GRADS, UNI_MAJORS } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES, DEMO_USER, UNI_GRADS, UNI_MAJORS, gradName } from '@/mocks/data';
 import type { EditTargetConfig, UserTargetSchool } from '@/types/user';
 import { updateUserProfile, replaceTargetSchools } from '@/api/auth';
 
@@ -562,7 +562,7 @@ export default function EditProfileScreen() {
                   const major = ts.majorId && ts.gradSchool
                     ? UNI_MAJORS[`${ts.universityId}::${ts.gradSchool}`]?.find((m) => m.id === ts.majorId)?.label
                     : undefined;
-                  const sub = [ts.gradSchool || '未指定研究科', major].filter(Boolean).join(' · ');
+                  const sub = [gradName(ts.universityId, ts.gradSchool ?? '') || '未指定研究科', major].filter(Boolean).join(' · ');
                   const bg = u ? (accent500[u.accent] ?? Colors.blue500) : Colors.blue500;
                   const head = u ? `${u.short} · ${u.nameJp}` : ts.universityId;
                   const initial = u?.short.slice(0, 1) ?? '?';
@@ -669,7 +669,7 @@ export default function EditProfileScreen() {
               </Text>
               <Text style={styles.pickBreadcrumbSep}>›</Text>
               <Text style={[styles.pickBreadcrumbText, pickerStep === 'grad' && styles.pickBreadcrumbActive]}>
-                {pickedGrad ?? '学院'}
+                {pickedGrad ? gradName(pickedUniId!, pickedGrad) : '学院'}
               </Text>
               <Text style={styles.pickBreadcrumbSep}>›</Text>
               <Text style={[styles.pickBreadcrumbText, pickerStep === 'major' && styles.pickBreadcrumbActive]}>
@@ -718,7 +718,7 @@ export default function EditProfileScreen() {
                         }}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.pickRowTitle}>{grad}</Text>
+                          <Text style={styles.pickRowTitle}>{gradName(pickedUniId!, grad)}</Text>
                           <Text style={styles.pickRowDesc}>{majors.length} 个专业</Text>
                         </View>
                         <Icon name="chevronRight" size={16} color={Colors.textMuted} />

@@ -12,7 +12,7 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, gradName } from '@/mocks/data';
 import { FREE_TARGET_LIMIT, PRO_TARGET_LIMIT } from '@/utils/accessPolicy';
 import type { EditTargetConfig, TargetEntry } from '@/types/user';
 
@@ -283,7 +283,7 @@ export function EditTargetSheet({ open, onClose, initialConfig, onSave, isPro = 
                         const u = KAKOMON_UNIVERSITIES.find((x) => x.id === e.universityId);
                         if (!u) return null;
                         const major = e.majorId ? (UNI_MAJORS[`${e.universityId}::${e.gradSchool}`]?.find((m) => m.id === e.majorId)?.label ?? null) : null;
-                        const subline = [e.gradSchool || '未指定研究科', major].filter(Boolean).join(' · ');
+                        const subline = [gradName(e.universityId, e.gradSchool) || '未指定研究科', major].filter(Boolean).join(' · ');
                         const bg = ACCENT_500[u.accent] ?? Colors.blue500;
                         return (
                           <View key={`${e.universityId}::${e.gradSchool}::${e.majorId ?? ''}`} style={styles.schoolEntry}>
@@ -430,7 +430,7 @@ function ThreeStepSchoolPicker({
         </Text>
         <Text style={styles.hotLabel}>›</Text>
         <Text style={[styles.hotLabel, step === 'grad' && { color: Colors.blue500, fontWeight: Typography.weightSemibold }]}>
-          {pickedGrad ?? '学院'}
+          {pickedGrad ? gradName(pickedUniId!, pickedGrad) : '学院'}
         </Text>
         <Text style={styles.hotLabel}>›</Text>
         <Text style={[styles.hotLabel, step === 'major' && { color: Colors.blue500, fontWeight: Typography.weightSemibold }]}>
@@ -511,7 +511,7 @@ function ThreeStepSchoolPicker({
                 >
                   <View style={styles.uniItemBtn}>
                     <View style={styles.uniItemInfo}>
-                      <Text style={styles.uniItemName}>{grad}</Text>
+                      <Text style={styles.uniItemName}>{gradName(pickedUniId!, grad)}</Text>
                       <Text style={{ fontSize: Typography.xs, color: Colors.textMuted, marginTop: 2 }}>{ms.length} 个专业</Text>
                     </View>
                     <Icon name="chevronRight" size={16} color={Colors.textMuted} />

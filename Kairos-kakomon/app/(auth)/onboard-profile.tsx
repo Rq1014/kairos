@@ -19,7 +19,7 @@ import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Button, Icon, VerifyCodeInput, WheelDatePicker } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
-import { KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, gradName } from '@/mocks/data';
 import {
   AuthError,
   bindIdentity,
@@ -660,7 +660,7 @@ export default function OnboardProfileScreen() {
               </Text>
               <Text style={styles.breadcrumbSep}>›</Text>
               <Text style={[styles.breadcrumbText, pickerStep === 'grad' && styles.breadcrumbActive]}>
-                {pickedGrad ?? '学院'}
+                {pickedGrad ? gradName(pickedUniId!, pickedGrad) : '学院'}
               </Text>
               <Text style={styles.breadcrumbSep}>›</Text>
               <Text style={[styles.breadcrumbText, pickerStep === 'major' && styles.breadcrumbActive]}>
@@ -709,7 +709,7 @@ export default function OnboardProfileScreen() {
                         }}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.pickRowTitle}>{grad}</Text>
+                          <Text style={styles.pickRowTitle}>{gradName(pickedUniId!, grad)}</Text>
                           <Text style={styles.pickRowDesc}>{majors.length} 个专业</Text>
                         </View>
                         <Icon name="chevronRight" size={16} color={Colors.textMuted} />
@@ -738,7 +738,7 @@ export default function OnboardProfileScreen() {
                             universityId: pickedUniId,
                             gradSchool: pickedGrad,
                             majorId: m.id,
-                            label: `${uniShort} · ${pickedGrad} · ${m.label}`,
+                            label: `${uniShort} · ${gradName(pickedUniId!, pickedGrad!)} · ${m.label}`,
                           });
                           closeMajorPicker();
                         }}

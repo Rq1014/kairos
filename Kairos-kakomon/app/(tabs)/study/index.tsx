@@ -26,6 +26,7 @@ import {
   KAKOMON_UNIVERSITIES,
   UNI_MAJORS,
   DEMO_USER,
+  gradName,
 } from '@/mocks/data';
 
 const URGENCY_COLOR = (days: number) =>
@@ -232,7 +233,7 @@ export default function StudyScreen() {
                   const major = first.majorId
                     ? (UNI_MAJORS[`${first.universityId}::${grad}`]?.find((m) => m.id === first.majorId)?.label ?? null)
                     : null;
-                  return [grad, major].filter(Boolean).join(' · ') || '未指定研究科';
+                  return [gradName(first.universityId, grad), major].filter(Boolean).join(' · ') || '未指定研究科';
                 })()}
               </Text>
             ) : (
