@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getQuestions } from '@/api/questions';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { AdGateModal } from '@/components/ui';
@@ -66,15 +68,25 @@ export default function TopicQuestionsScreen() {
   const { universityId, gradSchool, majorId, subject } = params;
   const uni = KAKOMON_UNIVERSITIES.find((u) => u.id === universityId);
 
+  const questionsQuery = useQuery({
+    queryKey: ['questions', universityId, gradSchool, subject],
+    queryFn: () => getQuestions({
+      universityIds: universityId ? [universityId] : undefined,
+      subjects: subject ? [subject] : undefined,
+      pageSize: 100,
+    }),
+    enabled: !!universityId && !!subject,
+  });
+
+  // getQuestions 内部已带 mock 回退;这里再按 majorId 本地细筛 + 排序,兼容后端未按专业过滤。
   const questions = useMemo(() => {
-    return KAKOMON_QUESTIONS.filter((q) => {
-      if (q.universityId !== universityId) return false;
-      if (gradSchool && q.graduateSchool !== gradSchool) return false;
-      if (majorId && q.majorIds && q.majorIds.length > 0 && !q.majorIds.includes(majorId)) return false;
-      if (q.subject !== subject) return false;
-      return true;
-    }).sort((a, b) => b.year - a.year);
-  }, [universityId, gradSchool, majorId, subject]);
+    const items = questionsQuery.data?.items ?? [];
+    return items
+      .filter((q) => (gradSchool ? q.graduateSchool === gradSchool : true))
+      .filter((q) => (majorId && q.majorIds && q.majorIds.length > 0 ? q.majorIds.includes(majorId) : true))
+      .filter((q) => q.subject === subject)
+      .sort((a, b) => b.year - a.year);
+  }, [questionsQuery.data, gradSchool, majorId, subject]);
 
   const [gate, setGate] = useState<KakomonQuestion | null>(null);
 
