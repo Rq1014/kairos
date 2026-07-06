@@ -113,10 +113,8 @@ public class DictionaryServiceImpl implements DictionaryService {
         if (u == null) throw new BizException(ResultCode.DICT_NOT_FOUND);
         GradSchoolEntity g = gradSchoolMapper.findByUniversityIdAndCode(u.getId(), gradCode);
         if (g == null) {
-            // 兼容前端使用 nameJp 作为 key
-            g = gradSchoolMapper.findByUniversityIdAndNameJp(u.getId(), gradCode);
+            throw new BizException(ResultCode.DICT_NOT_FOUND);
         }
-        if (g == null) throw new BizException(ResultCode.DICT_NOT_FOUND);
         List<MajorEntity> ms = majorMapper.findByGradSchoolId(g.getId());
         List<MajorResponse> result = new ArrayList<>();
         for (MajorEntity m : ms) result.add(toMajorResp(m));
