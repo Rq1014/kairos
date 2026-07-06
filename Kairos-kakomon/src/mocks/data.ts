@@ -5,25 +5,44 @@ import type { UserProfile } from '@/types/user';
 
 // ─── 研究科列表 ────────────────────────────────────────────
 export const UNI_GRADS: UniGrads = {
-  todai:        ['情报理工学系研究科', '工学系研究科', '理学系研究科', '经济学研究科', '新领域创成科学研究科', '综合文化研究科'],
-  titech:       ['情报理工学院', '工学院', '理学院', '物质理工学院', '环境社会理工学院'],
-  kyodai:       ['工学研究科', '理学研究科', '情报学研究科', '经济学研究科', '农学研究科'],
-  waseda:       ['基干理工学研究科', '创造理工学研究科', '先进理工学研究科', '经济学研究科', '商学研究科'],
-  keio:         ['理工学研究科', '经济学研究科', '商学研究科', '法学研究科', '媒体研究科'],
-  osakau:       ['工学研究科', '基础工学研究科', '理学研究科', '情报科学研究科'],
-  hitotsubashi: ['经济学研究科', '商学研究科', '法学研究科', '社会学研究科'],
-  kobe:         ['工学研究科', '经济学研究科', '海事科学研究科', '国际文化学研究科'],
-  nagoya:       ['工学研究科', '情报学研究科', '理学研究科', '经济学研究科'],
-  kyushu:       ['工学府', '情报科学府', '理学府', '经济学府'],
-  hokudai:      ['工学院', '理学院', '农学院', '情报科学院'],
-  tohoku:       ['工学研究科', '理学研究科', '情报科学研究科', '经济学研究科'],
-  sophia:       ['理工学研究科', '经济学研究科', '外国语学研究科', '全球研究研究科'],
-  doshisha:     ['理工学研究科', '经济学研究科', '商学研究科', '法学研究科'],
+  todai:        ['info-sci', 'engineering', 'science', 'economics', 'new-domain', 'integrated-culture'],
+  titech:       ['info-sci', 'engineering', 'science', 'materials', 'env-social'],
+  kyodai:       ['engineering', 'science', 'informatics', 'economics', 'agriculture'],
+  waseda:       ['core-sci', 'creative-sci', 'advanced-sci', 'economics', 'commerce'],
+  keio:         ['science-engineering', 'economics', 'commerce', 'law', 'media'],
+  osakau:       ['engineering', 'basic-engineering', 'science', 'info-science'],
+  hitotsubashi: ['economics', 'commerce', 'law', 'sociology'],
+  kobe:         ['engineering', 'economics', 'maritime', 'intl-culture'],
+  nagoya:       ['engineering', 'informatics', 'science', 'economics'],
+  kyushu:       ['engineering', 'info-science', 'science', 'economics'],
+  hokudai:      ['engineering', 'science', 'agriculture', 'info-science'],
+  tohoku:       ['engineering', 'science', 'info-science', 'economics'],
+  sophia:       ['science-engineering', 'economics', 'foreign-languages', 'global-studies'],
+  doshisha:     ['science-engineering', 'economics', 'commerce', 'law'],
+};
+
+/** 研究科 code → 日文显示名。复合键 `大学::code`（同 code 跨校日文名不同）。 */
+export const GRAD_SCHOOL_NAMES: Record<string, string> = {
+  'todai::info-sci': '情报理工学系研究科', 'todai::engineering': '工学系研究科', 'todai::science': '理学系研究科',
+  'todai::economics': '经济学研究科', 'todai::new-domain': '新领域创成科学研究科', 'todai::integrated-culture': '综合文化研究科',
+  'titech::info-sci': '情报理工学院', 'titech::engineering': '工学院', 'titech::science': '理学院', 'titech::materials': '物质理工学院', 'titech::env-social': '环境社会理工学院',
+  'kyodai::engineering': '工学研究科', 'kyodai::science': '理学研究科', 'kyodai::informatics': '情报学研究科', 'kyodai::economics': '经济学研究科', 'kyodai::agriculture': '农学研究科',
+  'waseda::core-sci': '基干理工学研究科', 'waseda::creative-sci': '创造理工学研究科', 'waseda::advanced-sci': '先进理工学研究科', 'waseda::economics': '经济学研究科', 'waseda::commerce': '商学研究科',
+  'keio::science-engineering': '理工学研究科', 'keio::economics': '经济学研究科', 'keio::commerce': '商学研究科', 'keio::law': '法学研究科', 'keio::media': '媒体研究科',
+  'osakau::engineering': '工学研究科', 'osakau::basic-engineering': '基础工学研究科', 'osakau::science': '理学研究科', 'osakau::info-science': '情报科学研究科',
+  'hitotsubashi::economics': '经济学研究科', 'hitotsubashi::commerce': '商学研究科', 'hitotsubashi::law': '法学研究科', 'hitotsubashi::sociology': '社会学研究科',
+  'kobe::engineering': '工学研究科', 'kobe::economics': '经济学研究科', 'kobe::maritime': '海事科学研究科', 'kobe::intl-culture': '国际文化学研究科',
+  'nagoya::engineering': '工学研究科', 'nagoya::informatics': '情报学研究科', 'nagoya::science': '理学研究科', 'nagoya::economics': '经济学研究科',
+  'kyushu::engineering': '工学府', 'kyushu::info-science': '情报科学府', 'kyushu::science': '理学府', 'kyushu::economics': '经济学府',
+  'hokudai::engineering': '工学院', 'hokudai::science': '理学院', 'hokudai::agriculture': '农学院', 'hokudai::info-science': '情报科学院',
+  'tohoku::engineering': '工学研究科', 'tohoku::science': '理学研究科', 'tohoku::info-science': '情报科学研究科', 'tohoku::economics': '经济学研究科',
+  'sophia::science-engineering': '理工学研究科', 'sophia::economics': '经济学研究科', 'sophia::foreign-languages': '外国语学研究科', 'sophia::global-studies': '全球研究研究科',
+  'doshisha::science-engineering': '理工学研究科', 'doshisha::economics': '经济学研究科', 'doshisha::commerce': '商学研究科', 'doshisha::law': '法学研究科',
 };
 
 // ─── 専攻 / コース ─────────────────────────────────────────
 export const UNI_MAJORS: UniMajors = {
-  'todai::情报理工学系研究科': [
+  'todai::info-sci': [
     { id: 'cs',   label: 'コンピュータ科学', short: 'CS',   desc: '算法 / OS / 编译' },
     { id: 'eeis', label: '电子情报学',       short: 'EEIS', desc: '电子 + 情报融合' },
     { id: 'mi',   label: '数理情报学',       short: 'MI',   desc: '应用数学 / 统计' },
@@ -31,7 +50,7 @@ export const UNI_MAJORS: UniMajors = {
     { id: 'ii',   label: '知能机械情报学',   short: 'IME',  desc: '机器人 / AI' },
     { id: 'cnsi', label: '创造情报学',       short: 'CNSI', desc: '创新 / 交叉' },
   ],
-  'todai::工学系研究科': [
+  'todai::engineering': [
     { id: 'ee',  label: '电气系工学',   short: 'EE',  desc: '电力 / 通信' },
     { id: 'me',  label: '机械工学',     short: 'ME',  desc: '机械设计' },
     { id: 'ce',  label: '土木工学',     short: 'CE',  desc: '土木 / 建筑' },
@@ -39,44 +58,44 @@ export const UNI_MAJORS: UniMajors = {
     { id: 'ap',  label: '应用物理学',   short: 'AP',  desc: '物理 + 工程' },
     { id: 'mse', label: '材料工学',     short: 'MSE', desc: '金属 / 半导体' },
   ],
-  'todai::理学系研究科': [
+  'todai::science': [
     { id: 'math', label: '数学',     short: 'Math', desc: '纯粹 / 应用' },
     { id: 'phys', label: '物理学',   short: 'Phys', desc: '理论 / 实验' },
     { id: 'chem', label: '化学',     short: 'Chem', desc: '' },
     { id: 'bio',  label: '生物科学', short: 'Bio',  desc: '' },
   ],
-  'todai::经济学研究科': [
+  'todai::economics': [
     { id: 'econ', label: '经济专攻',     short: 'Econ', desc: '宏观 / 微观' },
     { id: 'mgmt', label: '经营专攻',     short: 'Mgmt', desc: '管理 / 战略' },
     { id: 'fin',  label: '金融システム', short: 'Fin',  desc: '金融工程' },
   ],
-  'titech::情报理工学院': [
+  'titech::info-sci': [
     { id: 'mcs', label: '数理・计算科学', short: 'MCS', desc: '算法 + 数学' },
     { id: 'is',  label: '情报工学',       short: 'IS',  desc: '软件 / 系统' },
     { id: 'ai',  label: '知能情报',       short: 'AI',  desc: 'AI / ML' },
   ],
-  'titech::工学院': [
+  'titech::engineering': [
     { id: 'ee',  label: '电気電子',     short: 'EE',  desc: '电子设计' },
     { id: 'me',  label: '机械系',       short: 'ME',  desc: '机械工程' },
     { id: 'sys', label: 'システム制御', short: 'Sys', desc: '控制 / 机器人' },
   ],
-  'kyodai::情报学研究科': [
+  'kyodai::informatics': [
     { id: 'ii',  label: '知能情报学',       short: 'II',  desc: 'AI / NLP' },
     { id: 'si',  label: '社会情报学',       short: 'SI',  desc: '数据 + 社会' },
     { id: 'sys', label: '系统科学',         short: 'Sys', desc: '控制系统' },
     { id: 'cis', label: '通信情报システム', short: 'CIS', desc: '网络 / 通信' },
   ],
-  'kyodai::工学研究科': [
+  'kyodai::engineering': [
     { id: 'ee',  label: '电气工学', short: 'EE',  desc: '' },
     { id: 'me',  label: '机械工学', short: 'ME',  desc: '' },
     { id: 'mse', label: '材料工学', short: 'MSE', desc: '' },
   ],
-  'waseda::基干理工学研究科': [
+  'waseda::core-sci': [
     { id: 'cs',   label: '情报理工',     short: 'CS',   desc: '' },
     { id: 'math', label: '数学应用数理', short: 'Math', desc: '' },
     { id: 'me',   label: '机械科学',     short: 'ME',   desc: '' },
   ],
-  'keio::理工学研究科': [
+  'keio::science-engineering': [
     { id: 'oe', label: '开放工学',   short: 'OE', desc: '' },
     { id: 'is', label: '情报工学',   short: 'IS', desc: '' },
     { id: 'bp', label: '基础理工学', short: 'BP', desc: '' },
@@ -308,7 +327,7 @@ export const KAKOMON_UNIVERSITIES: University[] = [
 export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   {
     id: 'q-todai-2024-math-3',
-    universityId: 'todai', graduateSchool: '情报理工学系研究科',
+    universityId: 'todai', graduateSchool: 'info-sci',
     majorIds: ['cs', 'mi', 'si'],
     year: 2024, subject: '数学', questionNo: '第3问',
     title: '固有值与对角化',
@@ -362,7 +381,7 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   },
   {
     id: 'q-titech-2021-math-2',
-    universityId: 'titech', graduateSchool: '情报理工学院',
+    universityId: 'titech', graduateSchool: 'info-sci',
     majorIds: ['mcs', 'is'],
     year: 2021, subject: '数学', questionNo: '第2问',
     title: '二次型标准化',
@@ -374,7 +393,7 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   },
   {
     id: 'q-kyodai-2023-math-1',
-    universityId: 'kyodai', graduateSchool: '工学研究科',
+    universityId: 'kyodai', graduateSchool: 'engineering',
     majorIds: ['ee', 'me', 'mse'],
     year: 2023, subject: '数学', questionNo: '第1问',
     title: '多重积分与极坐标',
@@ -386,7 +405,7 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   },
   {
     id: 'q-waseda-2024-stat-2',
-    universityId: 'waseda', graduateSchool: '经济学研究科',
+    universityId: 'waseda', graduateSchool: 'economics',
     year: 2024, subject: '统计', questionNo: '第2问',
     title: '假设检验：Z 检验与 P 值',
     knowledgePoints: ['概率统计', '假设检验', 'Z 检验'],
@@ -397,7 +416,7 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   },
   {
     id: 'q-todai-2023-math-1',
-    universityId: 'todai', graduateSchool: '情报理工学系研究科',
+    universityId: 'todai', graduateSchool: 'info-sci',
     majorIds: ['mi', 'cs', 'si'],
     year: 2023, subject: '数学', questionNo: '第1问',
     title: '线性变换与基变换',
@@ -409,7 +428,7 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
   },
   {
     id: 'q-todai-2024-info-2',
-    universityId: 'todai', graduateSchool: '情报理工学系研究科',
+    universityId: 'todai', graduateSchool: 'info-sci',
     majorIds: ['cs', 'ii'],
     year: 2024, subject: '情报', questionNo: '第2问',
     title: '动态规划：背包问题变形',
@@ -422,38 +441,38 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
 
   // ── 扩充题库（多校 × 多年 × 多专题 × 难度）──────────────────
   // 东大
-  { id: 'q-todai-2026-math-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'mi', 'si', 'eeis'], year: 2026, subject: '数学', questionNo: '第1问', title: '矩阵的 Jordan 标准形', knowledgePoints: ['线性代数', 'Jordan标准形', '广义特征向量'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.81, masteryStatus: null },
-  { id: 'q-todai-2026-math-2', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'mi', 'si'], year: 2026, subject: '数学', questionNo: '第2问', title: '重积分与变量代换', knowledgePoints: ['微积分', '重积分', '雅可比行列式'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.5, masteryStatus: null },
-  { id: 'q-todai-2025-math-2', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['mi', 'cs'], year: 2025, subject: '数学', questionNo: '第2问', title: '二次型与正定性判定', knowledgePoints: ['线性代数', '二次型', '正定矩阵'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.54, masteryStatus: null },
-  { id: 'q-todai-2025-info-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'ii'], year: 2025, subject: '情报', questionNo: '第1问', title: '图算法：最短路与 Dijkstra', knowledgePoints: ['算法', '图论', '最短路'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.66, masteryStatus: null },
-  { id: 'q-todai-2022-math-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['mi', 'cs', 'si'], year: 2022, subject: '数学', questionNo: '第1问', title: '傅里叶级数展开', knowledgePoints: ['微积分', '傅里叶级数', '周期函数'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.57, masteryStatus: null },
+  { id: 'q-todai-2026-math-1', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['cs', 'mi', 'si', 'eeis'], year: 2026, subject: '数学', questionNo: '第1问', title: '矩阵的 Jordan 标准形', knowledgePoints: ['线性代数', 'Jordan标准形', '广义特征向量'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.81, masteryStatus: null },
+  { id: 'q-todai-2026-math-2', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['cs', 'mi', 'si'], year: 2026, subject: '数学', questionNo: '第2问', title: '重积分与变量代换', knowledgePoints: ['微积分', '重积分', '雅可比行列式'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.5, masteryStatus: null },
+  { id: 'q-todai-2025-math-2', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['mi', 'cs'], year: 2025, subject: '数学', questionNo: '第2问', title: '二次型与正定性判定', knowledgePoints: ['线性代数', '二次型', '正定矩阵'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.54, masteryStatus: null },
+  { id: 'q-todai-2025-info-1', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['cs', 'ii'], year: 2025, subject: '情报', questionNo: '第1问', title: '图算法：最短路与 Dijkstra', knowledgePoints: ['算法', '图论', '最短路'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.66, masteryStatus: null },
+  { id: 'q-todai-2022-math-1', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['mi', 'cs', 'si'], year: 2022, subject: '数学', questionNo: '第1问', title: '傅里叶级数展开', knowledgePoints: ['微积分', '傅里叶级数', '周期函数'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.57, masteryStatus: null },
   // 东大 2024 数学：与 q-todai-2024-math-3 同卷，凑齐一张「6问选3」类整卷（此处 3 问选 2）供模考演示
-  { id: 'q-todai-2024-math-1', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'mi', 'si'], year: 2024, subject: '数学', questionNo: '第1问', paperId: 'p-todai-2024-math', orderIndex: 1, title: '定积分与常微分方程', bodyText: '（1）以下の定積分を求めよ。\n（2）微分方程式の一般解と特異解を求めよ。', knowledgePoints: ['微积分', '定积分', '微分方程'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.5, masteryStatus: null },
-  { id: 'q-todai-2024-math-2', universityId: 'todai', graduateSchool: '情报理工学系研究科', majorIds: ['cs', 'mi', 'si'], year: 2024, subject: '数学', questionNo: '第2问', paperId: 'p-todai-2024-math', orderIndex: 2, title: '3 次正方行列的固有值与幂', bodyText: '3 次正方行列 A について、固有値をすべて求め、Aⁿ を求めよ。', knowledgePoints: ['线性代数', '固有值', '矩阵幂'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.6, masteryStatus: null },
+  { id: 'q-todai-2024-math-1', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['cs', 'mi', 'si'], year: 2024, subject: '数学', questionNo: '第1问', paperId: 'p-todai-2024-math', orderIndex: 1, title: '定积分与常微分方程', bodyText: '（1）以下の定積分を求めよ。\n（2）微分方程式の一般解と特異解を求めよ。', knowledgePoints: ['微积分', '定积分', '微分方程'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.5, masteryStatus: null },
+  { id: 'q-todai-2024-math-2', universityId: 'todai', graduateSchool: 'info-sci', majorIds: ['cs', 'mi', 'si'], year: 2024, subject: '数学', questionNo: '第2问', paperId: 'p-todai-2024-math', orderIndex: 2, title: '3 次正方行列的固有值与幂', bodyText: '3 次正方行列 A について、固有値をすべて求め、Aⁿ を求めよ。', knowledgePoints: ['线性代数', '固有值', '矩阵幂'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.6, masteryStatus: null },
 
   // 东工大
-  { id: 'q-titech-2026-math-1', universityId: 'titech', graduateSchool: '情报理工学院', majorIds: ['mcs', 'is', 'ai'], year: 2026, subject: '数学', questionNo: '第1问', title: '固有值问题与对角化', knowledgePoints: ['线性代数', '固有值', '对角化'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.64, masteryStatus: null },
-  { id: 'q-titech-2025-info-1', universityId: 'titech', graduateSchool: '情报理工学院', majorIds: ['is', 'ai'], year: 2025, subject: '情报', questionNo: '第1问', title: '动态规划：编辑距离', knowledgePoints: ['算法', '动态规划', '字符串'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.74, masteryStatus: null },
-  { id: 'q-titech-2024-math-1', universityId: 'titech', graduateSchool: '情报理工学院', majorIds: ['mcs', 'is'], year: 2024, subject: '数学', questionNo: '第1问', title: '线性空间与基的变换', knowledgePoints: ['线性代数', '线性变换', '基'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.52, masteryStatus: null },
+  { id: 'q-titech-2026-math-1', universityId: 'titech', graduateSchool: 'info-sci', majorIds: ['mcs', 'is', 'ai'], year: 2026, subject: '数学', questionNo: '第1问', title: '固有值问题与对角化', knowledgePoints: ['线性代数', '固有值', '对角化'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.64, masteryStatus: null },
+  { id: 'q-titech-2025-info-1', universityId: 'titech', graduateSchool: 'info-sci', majorIds: ['is', 'ai'], year: 2025, subject: '情报', questionNo: '第1问', title: '动态规划：编辑距离', knowledgePoints: ['算法', '动态规划', '字符串'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.74, masteryStatus: null },
+  { id: 'q-titech-2024-math-1', universityId: 'titech', graduateSchool: 'info-sci', majorIds: ['mcs', 'is'], year: 2024, subject: '数学', questionNo: '第1问', title: '线性空间与基的变换', knowledgePoints: ['线性代数', '线性变换', '基'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.52, masteryStatus: null },
   // 理学院尚未在 UNI_MAJORS 配置专攻 → majorIds 留空，视为全研究科通用题
-  { id: 'q-titech-2023-physics-1', universityId: 'titech', graduateSchool: '理学院', year: 2023, subject: '物理', questionNo: '第1问', title: '一维势阱中的薛定谔方程', knowledgePoints: ['物理', '量子力学', '薛定谔方程'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.8, masteryStatus: null },
+  { id: 'q-titech-2023-physics-1', universityId: 'titech', graduateSchool: 'science', year: 2023, subject: '物理', questionNo: '第1问', title: '一维势阱中的薛定谔方程', knowledgePoints: ['物理', '量子力学', '薛定谔方程'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.8, masteryStatus: null },
 
   // 京大
-  { id: 'q-kyodai-2026-math-1', universityId: 'kyodai', graduateSchool: '工学研究科', majorIds: ['ee', 'me', 'mse'], year: 2026, subject: '数学', questionNo: '第1问', title: '常微分方程：齐次与非齐次', knowledgePoints: ['微积分', '微分方程', '常系数'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.55, masteryStatus: null },
-  { id: 'q-kyodai-2025-math-1', universityId: 'kyodai', graduateSchool: '工学研究科', majorIds: ['ee', 'me', 'mse'], year: 2025, subject: '数学', questionNo: '第1问', title: '重积分与极坐标变换', knowledgePoints: ['微积分', '重积分', '极坐标变换'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.63, masteryStatus: null },
-  { id: 'q-kyodai-2024-stat-1', universityId: 'kyodai', graduateSchool: '情报学研究科', majorIds: ['si', 'ii'], year: 2024, subject: '统计', questionNo: '第1问', title: '最大似然估计', knowledgePoints: ['概率统计', '最大似然', '参数估计'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.61, masteryStatus: null },
+  { id: 'q-kyodai-2026-math-1', universityId: 'kyodai', graduateSchool: 'engineering', majorIds: ['ee', 'me', 'mse'], year: 2026, subject: '数学', questionNo: '第1问', title: '常微分方程：齐次与非齐次', knowledgePoints: ['微积分', '微分方程', '常系数'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.55, masteryStatus: null },
+  { id: 'q-kyodai-2025-math-1', universityId: 'kyodai', graduateSchool: 'engineering', majorIds: ['ee', 'me', 'mse'], year: 2025, subject: '数学', questionNo: '第1问', title: '重积分与极坐标变换', knowledgePoints: ['微积分', '重积分', '极坐标变换'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.63, masteryStatus: null },
+  { id: 'q-kyodai-2024-stat-1', universityId: 'kyodai', graduateSchool: 'informatics', majorIds: ['si', 'ii'], year: 2024, subject: '统计', questionNo: '第1问', title: '最大似然估计', knowledgePoints: ['概率统计', '最大似然', '参数估计'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.61, masteryStatus: null },
 
   // 早大（基干理工现已配置专攻；经济学研究科未配置 → 留空）
-  { id: 'q-waseda-2026-stat-1', universityId: 'waseda', graduateSchool: '经济学研究科', year: 2026, subject: '统计', questionNo: '第1问', title: '回归分析与最小二乘', knowledgePoints: ['概率统计', '回归分析', '最小二乘'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.48, masteryStatus: null },
-  { id: 'q-waseda-2025-stat-1', universityId: 'waseda', graduateSchool: '经济学研究科', year: 2025, subject: '统计', questionNo: '第1问', title: '假设检验：t 检验', knowledgePoints: ['概率统计', '假设检验', 't检验'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.46, masteryStatus: null },
+  { id: 'q-waseda-2026-stat-1', universityId: 'waseda', graduateSchool: 'economics', year: 2026, subject: '统计', questionNo: '第1问', title: '回归分析与最小二乘', knowledgePoints: ['概率统计', '回归分析', '最小二乘'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.48, masteryStatus: null },
+  { id: 'q-waseda-2025-stat-1', universityId: 'waseda', graduateSchool: 'economics', year: 2025, subject: '统计', questionNo: '第1问', title: '假设检验：t 检验', knowledgePoints: ['概率统计', '假设检验', 't检验'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.46, masteryStatus: null },
 
   // 庆应
-  { id: 'q-keio-2025-math-1', universityId: 'keio', graduateSchool: '理工学研究科', majorIds: ['oe', 'is', 'bp'], year: 2025, subject: '数学', questionNo: '第1问', title: '复变函数与留数定理', knowledgePoints: ['微积分', '复变函数', '留数'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.76, masteryStatus: null },
-  { id: 'q-keio-2024-info-1', universityId: 'keio', graduateSchool: '理工学研究科', majorIds: ['is'], year: 2024, subject: '情报', questionNo: '第1问', title: '计算复杂度与 NP 问题', knowledgePoints: ['算法', '复杂度', 'NP'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.6, masteryStatus: null },
+  { id: 'q-keio-2025-math-1', universityId: 'keio', graduateSchool: 'science-engineering', majorIds: ['oe', 'is', 'bp'], year: 2025, subject: '数学', questionNo: '第1问', title: '复变函数与留数定理', knowledgePoints: ['微积分', '复变函数', '留数'], difficultyLabel: '难', difficultyLevel: 'very_hard', crowdDifficultyRate: 0.76, masteryStatus: null },
+  { id: 'q-keio-2024-info-1', universityId: 'keio', graduateSchool: 'science-engineering', majorIds: ['is'], year: 2024, subject: '情报', questionNo: '第1问', title: '计算复杂度与 NP 问题', knowledgePoints: ['算法', '复杂度', 'NP'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.6, masteryStatus: null },
 
   // 阪大（基础工学研究科未配置专攻 → 留空，全研究科通用）
-  { id: 'q-osakau-2025-math-1', universityId: 'osakau', graduateSchool: '基础工学研究科', year: 2025, subject: '数学', questionNo: '第1问', title: '线性代数：秩与解空间', knowledgePoints: ['线性代数', '秩', '解空间'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.51, masteryStatus: null },
-  { id: 'q-osakau-2024-math-1', universityId: 'osakau', graduateSchool: '基础工学研究科', year: 2024, subject: '数学', questionNo: '第1问', title: '固有值与二次型', knowledgePoints: ['线性代数', '固有值', '二次型'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.65, masteryStatus: null },
+  { id: 'q-osakau-2025-math-1', universityId: 'osakau', graduateSchool: 'basic-engineering', year: 2025, subject: '数学', questionNo: '第1问', title: '线性代数：秩与解空间', knowledgePoints: ['线性代数', '秩', '解空间'], difficultyLabel: '中等', difficultyLevel: 'medium', crowdDifficultyRate: 0.51, masteryStatus: null },
+  { id: 'q-osakau-2024-math-1', universityId: 'osakau', graduateSchool: 'basic-engineering', year: 2024, subject: '数学', questionNo: '第1问', title: '固有值与二次型', knowledgePoints: ['线性代数', '固有值', '二次型'], difficultyLabel: '中等偏难', difficultyLevel: 'hard', crowdDifficultyRate: 0.65, masteryStatus: null },
 ];
 
 // ─── 论坛帖子 ───────────────────────────────────────────────
@@ -688,8 +707,8 @@ export const DEMO_USER: UserProfile = {
   aiAskCount: 23,
   contributorPoints: 240,
   targetSchools: [
-    { universityId: 'todai', type: 'daigakuin', gradSchool: '情报理工学系研究科', majorId: 'cs', subjects: ['数学', '情报'], priority: 1 },
-    { universityId: 'titech', type: 'daigakuin', gradSchool: '情报理工学院', majorId: 'is', subjects: ['数学'], priority: 2 },
+    { universityId: 'todai', type: 'daigakuin', gradSchool: 'info-sci', majorId: 'cs', subjects: ['数学', '情报'], priority: 1 },
+    { universityId: 'titech', type: 'daigakuin', gradSchool: 'info-sci', majorId: 'is', subjects: ['数学'], priority: 2 },
   ],
   weakPoints: [
     { subject: '线性代数', point: '固有值与对角化', level: 4, count: 6 },
@@ -807,7 +826,7 @@ export const KAKOMON_PAPERS: ExamPaper[] = [
   {
     id: 'p-todai-2024-math',
     universityId: 'todai',
-    graduateSchool: '情报理工学系研究科',
+    graduateSchool: 'info-sci',
     majorId: null,
     year: 2024,
     subject: '数学',
