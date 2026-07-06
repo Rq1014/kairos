@@ -11,12 +11,14 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getPapers } from '@/api/papers';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, KAKOMON_PAPERS } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
@@ -235,12 +237,12 @@ export default function MockExamScreen() {
       }));
   }, [pool]);
 
-  const papersForEntry = useMemo(() => {
-    if (!activeEntry) return [] as ExamPaper[];
-    return KAKOMON_PAPERS.filter(
-      (p) => p.universityId === activeEntry.universityId && p.graduateSchool === activeEntry.gradSchool,
-    );
-  }, [activeEntry]);
+  const papersQuery = useQuery({
+    queryKey: ['papers', activeEntry?.universityId ?? '', activeEntry?.gradSchool ?? ''],
+    queryFn: () => getPapers({ universityId: activeEntry!.universityId, graduateSchool: activeEntry!.gradSchool }),
+    enabled: !!activeEntry,
+  });
+  const papersForEntry: ExamPaper[] = papersQuery.data ?? [];
 
   const findPaper = (year: number, subject: string) =>
     papersForEntry.find((p) => p.year === year && p.subject === subject) ?? null;
