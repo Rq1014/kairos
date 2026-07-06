@@ -85,7 +85,7 @@ export default function ExamSessionScreen() {
 
   const paperCode = params.paperCode;
   const paperQuery = useQuery({
-    queryKey: ['paper', paperCode],
+    queryKey: ['paper', paperCode ?? ''],
     queryFn: () => getPaper(paperCode!),
     enabled: !!paperCode,
   });
@@ -102,7 +102,8 @@ export default function ExamSessionScreen() {
         questionNo: d.questionNo,
         title: d.title,
         knowledgePoints: d.knowledgePoints ?? [],
-        difficultyLabel: d.difficultyLabel ?? '未标注',
+        difficultyLabel: d.difficultyLabel ?? '',
+        difficultyLevel: d.difficultyLevel as KakomonQuestion['difficultyLevel'],
         crowdDifficultyRate: 0,
         orderIndex: d.orderIndex,
       }));
