@@ -1208,3 +1208,14 @@
   ✅ 完成于 2026-07-06
 - [x] 门禁 type-check + lint 0 error 通过；回退路径静态走查通过（每个切流函数 try/catch+空→mock，屏幕层 ?? 回退）
   ✅ 完成于 2026-07-06，真机连 Phase 2 后端端到端待联调环境验证（本环境无后端/DB 凭据）
+
+### 2026-07-06 任务：研究科标识统一 第一期（全链路 code 化）
+- [x] 前端 mock 全链路 gradSchool 换 code（UNI_GRADS/UNI_MAJORS 键/题库/paper/demo）+ 新增 GRAD_SCHOOL_NAMES（复合键 大学::code）
+  ✅ 完成于 2026-07-06，26 道题按各自 universityId 映射（跨校 code 冲突已逐一核对）
+- [x] gradShort 改签名 (universityId, code) 查复合键显示名；后端撤 name_jp shim；universities.ts 传 code
+  ✅ 完成于 2026-07-06
+- [x] V1_5 seed 改 code；新增 V1_6 存量迁移（JOIN name_jp，幂等）
+  ✅ 完成于 2026-07-06，V1_6 已由用户在其数据库执行
+- [x] 门禁 type-check + lint 0 error + mvnw compile 通过；静态走查无中文研究科名残留（仅 GRAD_SCHOOL_NAMES 值/注释/显示兜底串保留）
+  ✅ 完成于 2026-07-06
+- [ ] 第二期：前端字典改从后端拉（单独 brainstorm）
