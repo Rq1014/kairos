@@ -11,6 +11,8 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getQuestion } from '@/api/questions';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -208,7 +210,14 @@ export default function QuestionDetailScreen() {
   // 「下一题」按此顺序跳到下一个，而非全局任取。
   const listIds = useMemo(() => (list ? list.split(',').filter(Boolean) : []), [list]);
 
-  const question = KAKOMON_QUESTIONS.find((q) => q.id === id) ?? KAKOMON_QUESTIONS[0];
+  const mockQuestion = KAKOMON_QUESTIONS.find((q) => q.id === id) ?? KAKOMON_QUESTIONS[0];
+  const questionQuery = useQuery({
+    queryKey: ['question', id],
+    queryFn: () => getQuestion(id!),
+    enabled: !!id,
+    initialData: mockQuestion,
+  });
+  const question = questionQuery.data ?? mockQuestion;
   const university = KAKOMON_UNIVERSITIES.find((u) => u.id === question.universityId)!;
   const graduateSchoolFor = (questionId: string) =>
     KAKOMON_QUESTIONS.find((q) => q.id === questionId)?.graduateSchool;
