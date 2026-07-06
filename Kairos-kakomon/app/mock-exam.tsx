@@ -262,10 +262,11 @@ export default function MockExamScreen() {
     if (qs.length === 0) return;
     const ids = qs.map((q) => q.id).join(',');
     const paper = findPaper(year, subject);
+    const paperParam = paper ? `&paperCode=${encodeURIComponent(paper.id)}` : '';
     const extra = paper
       ? `${paper.durationMinutes ? `&durationMinutes=${paper.durationMinutes}` : ''}${paper.selectRule ? `&selectTotal=${paper.selectRule.total}&selectChoose=${paper.selectRule.choose}` : ''}`
       : '';
-    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subject}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}${extra}` as any);
+    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subject}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}${extra}${paperParam}` as any);
   }
 
   // 广告门

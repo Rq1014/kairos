@@ -8,6 +8,8 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getPaper } from '@/api/papers';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -78,15 +80,39 @@ export default function ExamSessionScreen() {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
-  const params = useLocalSearchParams<{ title?: string; ids?: string; universityId?: string; mode?: string; durationMinutes?: string; selectTotal?: string; selectChoose?: string }>();
+  const params = useLocalSearchParams<{ title?: string; ids?: string; universityId?: string; mode?: string; durationMinutes?: string; selectTotal?: string; selectChoose?: string; paperCode?: string }>();
   const recordExamResult = useAttemptStore((s) => s.recordExamResult);
 
+  const paperCode = params.paperCode;
+  const paperQuery = useQuery({
+    queryKey: ['paper', paperCode],
+    queryFn: () => getPaper(paperCode!),
+    enabled: !!paperCode,
+  });
+
   const questions: KakomonQuestion[] = useMemo(() => {
+    // Prefer paper detail when available
+    if (paperQuery.data?.questionDetails?.length) {
+      return paperQuery.data.questionDetails.map((d) => ({
+        id: d.id,
+        universityId: d.universityId,
+        graduateSchool: d.graduateSchool,
+        year: d.year,
+        subject: d.subject,
+        questionNo: d.questionNo,
+        title: d.title,
+        knowledgePoints: d.knowledgePoints ?? [],
+        difficultyLabel: d.difficultyLabel ?? '未标注',
+        crowdDifficultyRate: 0,
+        orderIndex: d.orderIndex,
+      }));
+    }
+    // Fallback: ids → mock lookup
     const ids = (params.ids ?? '').split(',').filter(Boolean);
     return ids
       .map((id) => KAKOMON_QUESTIONS.find((q) => q.id === id))
       .filter((q): q is KakomonQuestion => !!q);
-  }, [params.ids]);
+  }, [paperQuery.data, params.ids]);
 
   const title = params.title ?? '模拟考试';
   const mode = (params.mode === 'topic' ? 'topic' : params.mode === 'custom' ? 'custom' : 'mock') as ExamResult['mode'];
