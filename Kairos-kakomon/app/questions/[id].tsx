@@ -218,7 +218,14 @@ export default function QuestionDetailScreen() {
     initialData: mockQuestion,
   });
   const question = questionQuery.data ?? mockQuestion;
-  const university = KAKOMON_UNIVERSITIES.find((u) => u.id === question.universityId)!;
+  const universityHit = KAKOMON_UNIVERSITIES.find((u) => u.id === question.universityId);
+  const university = universityHit ?? {
+    ...KAKOMON_UNIVERSITIES[0],
+    id: question.universityId,
+    short: question.universityId,
+    nameCn: question.graduateSchool || question.universityId,
+    accent: 'blue' as const,
+  };
   const graduateSchoolFor = (questionId: string) =>
     KAKOMON_QUESTIONS.find((q) => q.id === questionId)?.graduateSchool;
 
