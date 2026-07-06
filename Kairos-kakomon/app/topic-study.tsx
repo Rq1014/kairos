@@ -11,6 +11,8 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
+import { getQuestions } from '@/api/questions';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -174,9 +176,19 @@ export default function TopicStudyScreen() {
   }
 
   // 当前条目的题池
+  const poolQuery = useQuery({
+    queryKey: ['questions', 'pool', activeEntry?.universityId ?? '', activeEntry?.gradSchool ?? ''],
+    queryFn: () => getQuestions({
+      universityIds: activeEntry ? [activeEntry.universityId] : undefined,
+      pageSize: 200,
+    }),
+    enabled: !!activeEntry,
+  });
+
   const pool = useMemo(() => {
     if (!activeEntry) return [];
-    return KAKOMON_QUESTIONS.filter((q) => {
+    const source = poolQuery.data?.items?.length ? poolQuery.data.items : KAKOMON_QUESTIONS;
+    return source.filter((q) => {
       if (q.universityId !== activeEntry.universityId) return false;
       if (q.graduateSchool !== activeEntry.gradSchool) return false;
       if (activeEntry.majorId) {
@@ -184,7 +196,7 @@ export default function TopicStudyScreen() {
       }
       return true;
     });
-  }, [activeEntry]);
+  }, [activeEntry, poolQuery.data]);
 
   // subject 列表（即该专业的专业课）
   const subjects = useMemo(() => {
