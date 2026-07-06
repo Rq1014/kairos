@@ -1200,3 +1200,11 @@
 - [x] 门禁 ./mvnw compile 通过；curl 冒烟未执行（本环境无 DB 凭据，待联调环境验证）
   ✅ 完成于 2026-07-03
 - [ ] Phase 3：前端 `questions.ts` / `papers.ts` 切 `apiRequest`（另立计划）
+
+### 2026-07-06 任务：专题学习/模考 Phase 3（前端切流 mock→真实后端）
+- [x] papers.ts / questions.ts 切 apiRequest 真接口 + 响应字段映射（code→id、questions→questionIds、补 crowdDifficultyRate/related 字段）+ mock 回退
+  ✅ 完成于 2026-07-06
+- [x] 5 屏改用 useQuery：mock-exam(papers)、exam-session(paper 详情取题)、topic-questions、questions/[id]、topic-study
+  ✅ 完成于 2026-07-06
+- [x] 门禁 type-check + lint 0 error 通过；回退路径静态走查通过（每个切流函数 try/catch+空→mock，屏幕层 ?? 回退）
+  ✅ 完成于 2026-07-06，真机连 Phase 2 后端端到端待联调环境验证（本环境无后端/DB 凭据）
