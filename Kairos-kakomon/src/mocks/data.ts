@@ -40,6 +40,12 @@ export const GRAD_SCHOOL_NAMES: Record<string, string> = {
   'doshisha::science-engineering': '理工学研究科', 'doshisha::economics': '经济学研究科', 'doshisha::commerce': '商学研究科', 'doshisha::law': '法学研究科',
 };
 
+/** 研究科 code → 完整日文显示名(不截断)。查不到回退 code 本身。供标题/副标题/breadcrumb 用。 */
+export function gradName(universityId: string, code: string): string {
+  if (!code) return '';
+  return GRAD_SCHOOL_NAMES[`${universityId}::${code}`] ?? code;
+}
+
 // ─── 専攻 / コース ─────────────────────────────────────────
 export const UNI_MAJORS: UniMajors = {
   'todai::info-sci': [
