@@ -18,7 +18,7 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, GRAD_SCHOOL_NAMES } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
@@ -46,10 +46,11 @@ interface YearGroup {
 const normGrad = (universityId: string, gradSchool?: string) =>
   gradSchool ?? (UNI_GRADS[universityId]?.[0] ?? '');
 
-function gradShort(g: string): string {
-  if (!g) return '—';
-  const core = g.replace(/(研究科|学府|学院|研究院)$/u, '');
-  return core.length > 5 ? core.slice(0, 5) : core || g;
+function gradShort(universityId: string, code: string): string {
+  if (!code) return '—';
+  const name = GRAD_SCHOOL_NAMES[`${universityId}::${code}`] ?? code;
+  const core = name.replace(/(研究科|学府|学院|研究院)$/u, '');
+  return core.length > 5 ? core.slice(0, 5) : core || name;
 }
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
@@ -319,7 +320,7 @@ export default function MockExamScreen() {
       setMenuFor(null);
     };
     if (entry.isTarget) {
-      Alert.alert('移除', `确定移除 ${u?.short ?? ''} ${gradShort(entry.gradSchool)}${entry.majorLabel ? ' · ' + entry.majorLabel : ''}？`, [
+      Alert.alert('移除', `确定移除 ${u?.short ?? ''} ${gradShort(entry.universityId, entry.gradSchool)}${entry.majorLabel ? ' · ' + entry.majorLabel : ''}？`, [
         { text: '取消', style: 'cancel' },
         { text: '删除', style: 'destructive', onPress: () => {
           const next = (user.targetSchools ?? []).filter((s) => {
@@ -379,7 +380,7 @@ export default function MockExamScreen() {
           <Text style={styles.railAvatarText}>{u.short.slice(0, 1)}</Text>
         </View>
         <Text style={[styles.railName, active && styles.railNameActive]} numberOfLines={1}>{u.short}</Text>
-        <Text style={styles.railSub} numberOfLines={1}>{gradShort(e.gradSchool)}</Text>
+        <Text style={styles.railSub} numberOfLines={1}>{gradShort(e.universityId, e.gradSchool)}</Text>
         {e.majorLabel && <Text style={styles.railSub} numberOfLines={1}>{e.majorLabel}</Text>}
         <Pressable style={styles.railMore} hitSlop={6} onPress={() => setMenuFor(e)}>
           <Icon name="more" size={11} color={Colors.textMuted} />
@@ -532,7 +533,7 @@ export default function MockExamScreen() {
               return (
                 <>
                   <Text style={styles.menuTitle}>
-                    {u?.short} · {gradShort(menuFor.gradSchool)}{menuFor.majorLabel ? ` · ${menuFor.majorLabel}` : ''}
+                    {u?.short} · {gradShort(menuFor.universityId, menuFor.gradSchool)}{menuFor.majorLabel ? ` · ${menuFor.majorLabel}` : ''}
                   </Text>
                   <Pressable style={styles.menuItem} disabled={idx <= 0} onPress={() => moveEntry(menuFor, 'up')}>
                     <Icon name="chevronUp" size={15} color={idx <= 0 ? Colors.textMuted : Colors.textPrimary} />
