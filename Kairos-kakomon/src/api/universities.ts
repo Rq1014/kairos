@@ -202,10 +202,10 @@ export async function getUniversity(id: string): Promise<UniversityDetail> {
       skipAuth: true,
     });
     const uni = mergeWithMock(data);
-    const gradNames = (data.gradSchools ?? []).map((g) => g.nameJp);
+    const gradCodes = (data.gradSchools ?? []).map((g) => g.id);
     return {
       ...uni,
-      gradSchools: gradNames.length ? gradNames : (UNI_GRADS[id] ?? []),
+      gradSchools: gradCodes.length ? gradCodes : (UNI_GRADS[id] ?? []),
       reviews: [],
       professors: uni.professorHighlights.map((p) => professorFromHighlight(uni, p)),
     };
@@ -229,7 +229,7 @@ export async function getUniversityGradSchools(
       `/api/dict/universities/${encodeURIComponent(id)}/grad-schools`,
       { method: 'GET', skipAuth: true },
     );
-    return { universityId: id, items: (data.items ?? []).map((g) => g.nameJp) };
+    return { universityId: id, items: (data.items ?? []).map((g) => g.id) };
   } catch {
     return { universityId: id, items: UNI_GRADS[id] ?? [] };
   }

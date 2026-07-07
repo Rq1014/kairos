@@ -4,6 +4,7 @@ import type { ForumThread, ThreadReply, StudyGroup } from '@/types/forum';
 import type { UserProfile } from '@/types/user';
 
 // ─── 研究科列表 ────────────────────────────────────────────
+// dictStore 的 seed 兜底源（首次冷启动/无网络用）。运行时以后端 /api/dict/universities/tree 为准，勿手动追后端新增。
 export const UNI_GRADS: UniGrads = {
   todai:        ['info-sci', 'engineering', 'science', 'economics', 'new-domain', 'integrated-culture'],
   titech:       ['info-sci', 'engineering', 'science', 'materials', 'env-social'],
@@ -22,6 +23,7 @@ export const UNI_GRADS: UniGrads = {
 };
 
 /** 研究科 code → 日文显示名。复合键 `大学::code`（同 code 跨校日文名不同）。 */
+// dictStore 的 seed 兜底源（首次冷启动/无网络用）。运行时以后端 /api/dict/universities/tree 为准，勿手动追后端新增。
 export const GRAD_SCHOOL_NAMES: Record<string, string> = {
   'todai::info-sci': '情报理工学系研究科', 'todai::engineering': '工学系研究科', 'todai::science': '理学系研究科',
   'todai::economics': '经济学研究科', 'todai::new-domain': '新领域创成科学研究科', 'todai::integrated-culture': '综合文化研究科',
@@ -47,6 +49,7 @@ export function gradName(universityId: string, code: string): string {
 }
 
 // ─── 専攻 / コース ─────────────────────────────────────────
+// dictStore 的 seed 兜底源（首次冷启动/无网络用）。运行时以后端 /api/dict/universities/tree 为准，勿手动追后端新增。
 export const UNI_MAJORS: UniMajors = {
   'todai::info-sci': [
     { id: 'cs',   label: 'コンピュータ科学', short: 'CS',   desc: '算法 / OS / 编译' },

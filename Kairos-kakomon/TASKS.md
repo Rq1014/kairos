@@ -1219,3 +1219,23 @@
 - [x] 门禁 type-check + lint 0 error + mvnw compile 通过；静态走查无中文研究科名残留（仅 GRAD_SCHOOL_NAMES 值/注释/显示兜底串保留）
   ✅ 完成于 2026-07-06
 - [ ] 第二期：前端字典改从后端拉（单独 brainstorm）
+  ✅ 完成于 2026-07-07，见下方独立章节
+
+### 2026-07-07 任务：研究科标识统一 第二期（前端字典数据源化）
+> spec: docs/superpowers/specs/2026-07-07-gradschool-dict-datasource-design.md
+> plan: docs/superpowers/plans/2026-07-07-gradschool-dict-datasource.md
+> 执行：subagent-driven-development（每任务 implementer + reviewer 双门）
+
+- [x] 新增 src/api/dict.ts（/dict/version + /dict/universities/tree 拉取 + normalizeTree 拍平；空树返回 null）
+  ✅ 完成于 2026-07-07
+- [x] 新增 src/store/dictStore.ts（seed 初始态 + 三段式 hydrate[seed→cache→network] + dictGradName/dictGrads/dictMajors 同步 selector，命中空回退静态 seed）
+  ✅ 完成于 2026-07-07
+- [x] _layout.tsx 启动 useDictStore.getState().hydrate()（不 gate 渲染，seed-first 首屏无阻）
+  ✅ 完成于 2026-07-07
+- [x] 8 消费点改从 dictStore 读：EditTargetSheet / topic-study / mock-exam / edit-profile / onboard-profile / search / questions/[id] / study/index
+  ✅ 完成于 2026-07-07，字典刷新靠顶层 useDictStore((s)=>s.version) 裸订阅触发重渲；廉价字典查询从 useMemo 拆为普通计算避免 exhaustive-deps 警告（不留 eslint-disable）；search 的 styles.gradName 样式键与私有 gradShort 截断逻辑保持不变
+- [x] universities.ts code 保真（.map(g=>g.nameJp)→g.id，与 mock 兜底一致；死代码无消费方）+ mocks/data.ts 三字典加 seed 注释
+  ✅ 完成于 2026-07-07
+- [x] 门禁 type-check EXIT 0 + lint 0 error（19 既有 warning 基线）+ 全项目 grep 走查（消费屏幕无静态字典直读残留；universities.ts 作为 API 层保留 mock 兜底属合理）
+  ✅ 完成于 2026-07-07，真机端到端（选校/专题/模考/详情显示名 + 断网 seed 兜底 + 后端新增研究科 version 递增重启拉取）待联调环境人工验证（本环境无后端/DB 凭据 + 无模拟器）
+  ✅ 补充 2026-07-07：前述 "19 warning 基线" 修正——其中 4 条（topic-study / mock-exam 的 memo+useCallback 死导入）实为本次 useMemo→普通计算重构遗留、非既有基线，已清理；门禁现为 lint 15 warning / 0 error
