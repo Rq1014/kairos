@@ -20,7 +20,8 @@ import { Spacing } from '@/constants/spacing';
 import { Avatar, Icon, WheelDatePicker } from '@/components/ui';
 import { EditTargetSheet } from '@/components/study/EditTargetSheet';
 import { useAuthStore } from '@/store/authStore';
-import { KAKOMON_UNIVERSITIES, DEMO_USER, UNI_GRADS, UNI_MAJORS, gradName } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
 import type { EditTargetConfig, UserTargetSchool } from '@/types/user';
 import { updateUserProfile, replaceTargetSchools } from '@/api/auth';
 
@@ -211,14 +212,11 @@ export default function EditProfileScreen() {
   const entryKeyOf = (s: { universityId: string; gradSchool?: string; majorId?: string }) =>
     `${s.universityId}::${s.gradSchool ?? ''}::${s.majorId ?? ''}`;
 
-  const pickedUniGrads = useMemo<string[]>(
-    () => (pickedUniId ? (UNI_GRADS[pickedUniId] ?? []) : []),
-    [pickedUniId],
-  );
-  const pickedMajors = useMemo(
-    () => (pickedUniId && pickedGrad ? (UNI_MAJORS[`${pickedUniId}::${pickedGrad}`] ?? []) : []),
-    [pickedUniId, pickedGrad],
-  );
+  // Subscribe to dict version so component re-renders when dictionary updates
+  useDictStore((s) => s.version);
+
+  const pickedUniGrads: string[] = pickedUniId ? dictGrads(pickedUniId) : [];
+  const pickedMajors = pickedUniId && pickedGrad ? dictMajors(pickedUniId, pickedGrad) : [];
 
   function findUniShort(uniId: string): string {
     return KAKOMON_UNIVERSITIES.find((u) => u.id === uniId)?.short ?? uniId;
@@ -560,9 +558,9 @@ export default function EditProfileScreen() {
                 targetSchools.map((ts) => {
                   const u = KAKOMON_UNIVERSITIES.find((x) => x.id === ts.universityId);
                   const major = ts.majorId && ts.gradSchool
-                    ? UNI_MAJORS[`${ts.universityId}::${ts.gradSchool}`]?.find((m) => m.id === ts.majorId)?.label
+                    ? dictMajors(ts.universityId, ts.gradSchool).find((m) => m.id === ts.majorId)?.label
                     : undefined;
-                  const sub = [gradName(ts.universityId, ts.gradSchool ?? '') || '未指定研究科', major].filter(Boolean).join(' · ');
+                  const sub = [dictGradName(ts.universityId, ts.gradSchool ?? '') || '未指定研究科', major].filter(Boolean).join(' · ');
                   const bg = u ? (accent500[u.accent] ?? Colors.blue500) : Colors.blue500;
                   const head = u ? `${u.short} · ${u.nameJp}` : ts.universityId;
                   const initial = u?.short.slice(0, 1) ?? '?';
@@ -669,7 +667,7 @@ export default function EditProfileScreen() {
               </Text>
               <Text style={styles.pickBreadcrumbSep}>›</Text>
               <Text style={[styles.pickBreadcrumbText, pickerStep === 'grad' && styles.pickBreadcrumbActive]}>
-                {pickedGrad ? gradName(pickedUniId!, pickedGrad) : '学院'}
+                {pickedGrad ? dictGradName(pickedUniId!, pickedGrad) : '学院'}
               </Text>
               <Text style={styles.pickBreadcrumbSep}>›</Text>
               <Text style={[styles.pickBreadcrumbText, pickerStep === 'major' && styles.pickBreadcrumbActive]}>
@@ -679,7 +677,7 @@ export default function EditProfileScreen() {
 
             <ScrollView contentContainerStyle={styles.pickModalBody}>
               {pickerStep === 'uni' && KAKOMON_UNIVERSITIES.map((u) => {
-                const grads = UNI_GRADS[u.id] ?? [];
+                const grads = dictGrads(u.id);
                 if (grads.length === 0) return null;
                 const active = pickedUniId === u.id;
                 return (
@@ -706,7 +704,7 @@ export default function EditProfileScreen() {
                   <Text style={styles.pickEmptyHint}>该学校暂无可选学院</Text>
                 ) : (
                   pickedUniGrads.map((grad) => {
-                    const majors = UNI_MAJORS[`${pickedUniId}::${grad}`] ?? [];
+                    const majors = dictMajors(pickedUniId, grad);
                     const active = pickedGrad === grad;
                     return (
                       <Pressable
@@ -718,7 +716,7 @@ export default function EditProfileScreen() {
                         }}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.pickRowTitle}>{gradName(pickedUniId!, grad)}</Text>
+                          <Text style={styles.pickRowTitle}>{dictGradName(pickedUniId!, grad)}</Text>
                           <Text style={styles.pickRowDesc}>{majors.length} 个专业</Text>
                         </View>
                         <Icon name="chevronRight" size={16} color={Colors.textMuted} />

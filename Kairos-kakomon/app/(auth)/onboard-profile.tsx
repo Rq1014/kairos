@@ -19,7 +19,8 @@ import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Button, Icon, VerifyCodeInput, WheelDatePicker } from '@/components/ui';
 import { useAuthStore } from '@/store/authStore';
-import { KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, gradName } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES } from '@/mocks/data';
+import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
 import {
   AuthError,
   bindIdentity,
@@ -249,14 +250,11 @@ export default function OnboardProfileScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const pickedUniGrads = useMemo<string[]>(
-    () => (pickedUniId ? (UNI_GRADS[pickedUniId] ?? []) : []),
-    [pickedUniId],
-  );
-  const pickedMajors = useMemo(
-    () => (pickedUniId && pickedGrad ? (UNI_MAJORS[`${pickedUniId}::${pickedGrad}`] ?? []) : []),
-    [pickedUniId, pickedGrad],
-  );
+  // Subscribe to dict version so component re-renders when dictionary updates
+  useDictStore((s) => s.version);
+
+  const pickedUniGrads: string[] = pickedUniId ? dictGrads(pickedUniId) : [];
+  const pickedMajors = pickedUniId && pickedGrad ? dictMajors(pickedUniId, pickedGrad) : [];
 
   function openMajorPicker() {
     if (selectedMajor) {
@@ -660,7 +658,7 @@ export default function OnboardProfileScreen() {
               </Text>
               <Text style={styles.breadcrumbSep}>›</Text>
               <Text style={[styles.breadcrumbText, pickerStep === 'grad' && styles.breadcrumbActive]}>
-                {pickedGrad ? gradName(pickedUniId!, pickedGrad) : '学院'}
+                {pickedGrad ? dictGradName(pickedUniId!, pickedGrad) : '学院'}
               </Text>
               <Text style={styles.breadcrumbSep}>›</Text>
               <Text style={[styles.breadcrumbText, pickerStep === 'major' && styles.breadcrumbActive]}>
@@ -670,7 +668,7 @@ export default function OnboardProfileScreen() {
 
             <ScrollView contentContainerStyle={styles.modalBody}>
               {pickerStep === 'uni' && KAKOMON_UNIVERSITIES.map((u) => {
-                const grads = UNI_GRADS[u.id] ?? [];
+                const grads = dictGrads(u.id);
                 if (grads.length === 0) return null;
                 const active = pickedUniId === u.id;
                 return (
@@ -697,7 +695,7 @@ export default function OnboardProfileScreen() {
                   <Text style={styles.emptyHint}>该学校暂无可选学院</Text>
                 ) : (
                   pickedUniGrads.map((grad) => {
-                    const majors = UNI_MAJORS[`${pickedUniId}::${grad}`] ?? [];
+                    const majors = dictMajors(pickedUniId, grad);
                     const active = pickedGrad === grad;
                     return (
                       <Pressable
@@ -709,7 +707,7 @@ export default function OnboardProfileScreen() {
                         }}
                       >
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.pickRowTitle}>{gradName(pickedUniId!, grad)}</Text>
+                          <Text style={styles.pickRowTitle}>{dictGradName(pickedUniId!, grad)}</Text>
                           <Text style={styles.pickRowDesc}>{majors.length} 个专业</Text>
                         </View>
                         <Icon name="chevronRight" size={16} color={Colors.textMuted} />
@@ -738,7 +736,7 @@ export default function OnboardProfileScreen() {
                             universityId: pickedUniId,
                             gradSchool: pickedGrad,
                             majorId: m.id,
-                            label: `${uniShort} · ${gradName(pickedUniId!, pickedGrad!)} · ${m.label}`,
+                            label: `${uniShort} · ${dictGradName(pickedUniId!, pickedGrad!)} · ${m.label}`,
                           });
                           closeMajorPicker();
                         }}
