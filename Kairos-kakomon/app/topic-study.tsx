@@ -18,7 +18,8 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, GRAD_SCHOOL_NAMES, gradName } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
 import { schoolLimit } from '@/utils/accessPolicy';
@@ -36,11 +37,11 @@ interface RailEntry {
 }
 
 const normGrad = (universityId: string, gradSchool?: string) =>
-  gradSchool ?? (UNI_GRADS[universityId]?.[0] ?? '');
+  gradSchool ?? (dictGrads(universityId)[0] ?? '');
 
 function gradShort(universityId: string, code: string): string {
   if (!code) return '—';
-  const name = GRAD_SCHOOL_NAMES[`${universityId}::${code}`] ?? code;
+  const name = dictGradName(universityId, code);
   const core = name.replace(/(研究科|学府|学院|研究院)$/u, '');
   return core.length > 5 ? core.slice(0, 5) : core || name;
 }
@@ -117,6 +118,8 @@ export default function TopicStudyScreen() {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
+  // 订阅字典版本：dictStore 联网刷新后触发本页重渲，下方 railEntries 用新字典重算。
+  useDictStore((s) => s.version);
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const TARGET_LIMIT = schoolLimit(user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -132,12 +135,13 @@ export default function TopicStudyScreen() {
   const removeBrowse = useBrowseSchoolsStore((s) => s.remove);
   const reorderBrowse = useBrowseSchoolsStore((s) => s.reorder);
 
-  // 构建左栏：每个条目 = 学校+研究科+专业
-  const railEntries: RailEntry[] = useMemo(() => {
+  // 构建左栏：每个条目 = 学校+研究科+专业。轻量列表，无需 memo；
+  // 顶层 version 订阅已保证字典刷新时重渲，targetSchools/browseRaw 变化随重渲反映。
+  const railEntries: RailEntry[] = (() => {
     const out: RailEntry[] = [];
     (user.targetSchools ?? []).forEach((s) => {
       const grad = normGrad(s.universityId, s.gradSchool);
-      const majors = UNI_MAJORS[`${s.universityId}::${grad}`] ?? [];
+      const majors = dictMajors(s.universityId, grad);
       const mj = s.majorId ? majors.find((m) => m.id === s.majorId) : null;
       out.push({
         key: `${s.universityId}::${grad}::${s.majorId ?? ''}`,
@@ -149,7 +153,7 @@ export default function TopicStudyScreen() {
       });
     });
     browseRaw.forEach((e) => {
-      const grad = e.gradSchool ?? (UNI_GRADS[e.universityId]?.[0] ?? '');
+      const grad = e.gradSchool ?? (dictGrads(e.universityId)[0] ?? '');
       const key = `${e.universityId}::${grad}::`;
       if (out.some((r) => r.key === key)) return;
       out.push({
@@ -162,7 +166,7 @@ export default function TopicStudyScreen() {
       });
     });
     return out;
-  }, [user.targetSchools, browseRaw]);
+  })();
 
   const targetEntries = railEntries.filter((e) => e.isTarget);
   const browseEntries = railEntries.filter((e) => !e.isTarget);
@@ -303,7 +307,7 @@ export default function TopicStudyScreen() {
     return u.short.toLowerCase().includes(kw) || u.nameCn.includes(addQuery) || u.nameJp.includes(addQuery) || u.nameEn.toLowerCase().includes(kw);
   });
   const pendingUniObj = pendingUni ? KAKOMON_UNIVERSITIES.find((u) => u.id === pendingUni) : null;
-  const pendingGrads = pendingUni ? (UNI_GRADS[pendingUni] ?? []) : [];
+  const pendingGrads = pendingUni ? dictGrads(pendingUni) : [];
 
   function renderRailItem(e: RailEntry) {
     const u = KAKOMON_UNIVERSITIES.find((x) => x.id === e.universityId);
@@ -368,7 +372,7 @@ export default function TopicStudyScreen() {
             <ScrollView contentContainerStyle={styles.rightScroll} showsVerticalScrollIndicator={false}>
               <Text style={styles.rightTitle}>{activeUni?.nameCn}</Text>
               <Text style={styles.rightGrad}>
-                {gradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
+                {dictGradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
               </Text>
               <Text style={styles.rightSub}>{pool.length} 道题 · {subjects.length} 门专业课</Text>
 

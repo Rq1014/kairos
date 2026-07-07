@@ -18,7 +18,8 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, DEMO_USER, GRAD_SCHOOL_NAMES, gradName } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
@@ -44,11 +45,11 @@ interface YearGroup {
 }
 
 const normGrad = (universityId: string, gradSchool?: string) =>
-  gradSchool ?? (UNI_GRADS[universityId]?.[0] ?? '');
+  gradSchool ?? (dictGrads(universityId)[0] ?? '');
 
 function gradShort(universityId: string, code: string): string {
   if (!code) return '—';
-  const name = GRAD_SCHOOL_NAMES[`${universityId}::${code}`] ?? code;
+  const name = dictGradName(universityId, code);
   const core = name.replace(/(研究科|学府|学院|研究院)$/u, '');
   return core.length > 5 ? core.slice(0, 5) : core || name;
 }
@@ -142,6 +143,8 @@ export default function MockExamScreen() {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
+  // 订阅字典版本：dictStore 联网刷新后触发本页重渲，dictGrads/dictGradName/dictMajors 取到新值。
+  useDictStore((s) => s.version);
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const setUser = useAuthStore((s) => s.setUser);
   const authToken = useAuthStore((s) => s.token) ?? '';
@@ -165,7 +168,7 @@ export default function MockExamScreen() {
     const out: RailEntry[] = [];
     (user.targetSchools ?? []).forEach((s) => {
       const grad = normGrad(s.universityId, s.gradSchool);
-      const majors = UNI_MAJORS[`${s.universityId}::${grad}`] ?? [];
+      const majors = dictMajors(s.universityId, grad);
       const mj = s.majorId ? majors.find((m) => m.id === s.majorId) : null;
       out.push({
         key: `${s.universityId}::${grad}::${s.majorId ?? ''}`,
@@ -177,7 +180,7 @@ export default function MockExamScreen() {
       });
     });
     browseRaw.forEach((e) => {
-      const grad = e.gradSchool ?? (UNI_GRADS[e.universityId]?.[0] ?? '');
+      const grad = e.gradSchool ?? (dictGrads(e.universityId)[0] ?? '');
       const key = `${e.universityId}::${grad}::`;
       if (out.some((r) => r.key === key)) return;
       out.push({
@@ -367,7 +370,7 @@ export default function MockExamScreen() {
     return u.short.toLowerCase().includes(kw) || u.nameCn.includes(addQuery) || u.nameJp.includes(addQuery) || u.nameEn.toLowerCase().includes(kw);
   });
   const pendingUniObj = pendingUni ? KAKOMON_UNIVERSITIES.find((u) => u.id === pendingUni) : null;
-  const pendingGrads = pendingUni ? (UNI_GRADS[pendingUni] ?? []) : [];
+  const pendingGrads = pendingUni ? dictGrads(pendingUni) : [];
 
   function renderRailItem(e: RailEntry) {
     const u = KAKOMON_UNIVERSITIES.find((x) => x.id === e.universityId);
@@ -430,7 +433,7 @@ export default function MockExamScreen() {
             <ScrollView contentContainerStyle={styles.rightScroll} showsVerticalScrollIndicator={false}>
               <Text style={styles.rightTitle}>{activeUni?.nameCn}</Text>
               <Text style={styles.rightGrad}>
-                {gradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
+                {dictGradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
               </Text>
               <Text style={styles.rightSub}>{yearGroups.length} 个年度 · {pool.length} 道题</Text>
 

@@ -12,7 +12,8 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_UNIVERSITIES, UNI_GRADS, UNI_MAJORS, gradName } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES } from '@/mocks/data';
+import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
 import { FREE_TARGET_LIMIT, PRO_TARGET_LIMIT } from '@/utils/accessPolicy';
 import type { EditTargetConfig, TargetEntry } from '@/types/user';
 
@@ -152,6 +153,8 @@ const PRO_LIMIT = PRO_TARGET_LIMIT;
 export function EditTargetSheet({ open, onClose, initialConfig, onSave, isPro = false, onUpgrade }: EditTargetSheetProps) {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
+  // 订阅字典版本：dictStore 联网刷新后触发本组件重渲，下方 dictGradName/dictMajors 取到新值。
+  useDictStore((s) => s.version);
 
   const maxTargets = isPro ? PRO_LIMIT : FREE_LIMIT;
 
@@ -282,8 +285,8 @@ export function EditTargetSheet({ open, onClose, initialConfig, onSave, isPro = 
                       {draft.entries.map((e) => {
                         const u = KAKOMON_UNIVERSITIES.find((x) => x.id === e.universityId);
                         if (!u) return null;
-                        const major = e.majorId ? (UNI_MAJORS[`${e.universityId}::${e.gradSchool}`]?.find((m) => m.id === e.majorId)?.label ?? null) : null;
-                        const subline = [gradName(e.universityId, e.gradSchool) || '未指定研究科', major].filter(Boolean).join(' · ');
+                        const major = e.majorId ? (dictMajors(e.universityId, e.gradSchool).find((m) => m.id === e.majorId)?.label ?? null) : null;
+                        const subline = [dictGradName(e.universityId, e.gradSchool) || '未指定研究科', major].filter(Boolean).join(' · ');
                         const bg = ACCENT_500[u.accent] ?? Colors.blue500;
                         return (
                           <View key={`${e.universityId}::${e.gradSchool}::${e.majorId ?? ''}`} style={styles.schoolEntry}>
@@ -374,6 +377,8 @@ function ThreeStepSchoolPicker({
   styles: ReturnType<typeof makeStyles>;
   Colors: ThemeColors;
 }) {
+  // 订阅字典版本：dictStore 联网刷新后触发本 picker 重渲，下方 dictGrads/dictMajors 取到新值。
+  useDictStore((s) => s.version);
   const [step, setStep] = useState<PickerStep>('uni');
   const [pickedUniId, setPickedUniId] = useState<string | null>(null);
   const [pickedGrad, setPickedGrad] = useState<string | null>(null);
@@ -382,14 +387,9 @@ function ThreeStepSchoolPicker({
     () => (pickedUniId ? KAKOMON_UNIVERSITIES.find((u) => u.id === pickedUniId) ?? null : null),
     [pickedUniId],
   );
-  const grads = useMemo<string[]>(
-    () => (pickedUniId ? (UNI_GRADS[pickedUniId] ?? []) : []),
-    [pickedUniId],
-  );
-  const majors = useMemo(
-    () => (pickedUniId && pickedGrad ? (UNI_MAJORS[`${pickedUniId}::${pickedGrad}`] ?? []) : []),
-    [pickedUniId, pickedGrad],
-  );
+  // 廉价字典查询，无需 memo；上面的 version 订阅已保证刷新时重渲。
+  const grads: string[] = pickedUniId ? dictGrads(pickedUniId) : [];
+  const majors = pickedUniId && pickedGrad ? dictMajors(pickedUniId, pickedGrad) : [];
 
   const atLimit = schoolCount >= max;
 
@@ -430,7 +430,7 @@ function ThreeStepSchoolPicker({
         </Text>
         <Text style={styles.hotLabel}>›</Text>
         <Text style={[styles.hotLabel, step === 'grad' && { color: Colors.blue500, fontWeight: Typography.weightSemibold }]}>
-          {pickedGrad ? gradName(pickedUniId!, pickedGrad) : '学院'}
+          {pickedGrad ? dictGradName(pickedUniId!, pickedGrad) : '学院'}
         </Text>
         <Text style={styles.hotLabel}>›</Text>
         <Text style={[styles.hotLabel, step === 'major' && { color: Colors.blue500, fontWeight: Typography.weightSemibold }]}>
@@ -462,7 +462,7 @@ function ThreeStepSchoolPicker({
 
         {/* Step 1: 学校 */}
         {step === 'uni' && KAKOMON_UNIVERSITIES.map((u) => {
-          const gs = UNI_GRADS[u.id] ?? [];
+          const gs = dictGrads(u.id);
           if (gs.length === 0) return null;
           const isPicked = entries.some((e) => e.universityId === u.id);
           const blocked = atLimit && !isPicked;
@@ -502,7 +502,7 @@ function ThreeStepSchoolPicker({
             </View>
           ) : (
             grads.map((grad) => {
-              const ms = UNI_MAJORS[`${pickedUniId}::${grad}`] ?? [];
+              const ms = dictMajors(pickedUniId, grad);
               return (
                 <Pressable
                   key={grad}
@@ -511,7 +511,7 @@ function ThreeStepSchoolPicker({
                 >
                   <View style={styles.uniItemBtn}>
                     <View style={styles.uniItemInfo}>
-                      <Text style={styles.uniItemName}>{gradName(pickedUniId!, grad)}</Text>
+                      <Text style={styles.uniItemName}>{dictGradName(pickedUniId!, grad)}</Text>
                       <Text style={{ fontSize: Typography.xs, color: Colors.textMuted, marginTop: 2 }}>{ms.length} 个专业</Text>
                     </View>
                     <Icon name="chevronRight" size={16} color={Colors.textMuted} />
