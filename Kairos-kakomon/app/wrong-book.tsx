@@ -10,16 +10,15 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Card, Icon, ProgressBar, Segmented } from '@/components/ui';
-import { KAKOMON_WRONG_QUESTIONS, KAKOMON_KNOWLEDGE_MATRIX } from '@/mocks/data';
+import { getWrongBook, getKnowledgeMatrix } from '@/api/questions';
 import { recommendRelated } from '@/utils/recommend';
-import type { KakomonQuestion } from '@/types/question';
-
-type WrongQuestion = (typeof KAKOMON_WRONG_QUESTIONS)[number];
+import type { KakomonQuestion, WrongQuestion } from '@/types/question';
 
 const SUBJECTS = ['全部', '线性代数', '微积分', '概率统计', '算法'];
 
@@ -171,9 +170,20 @@ export default function WrongBookScreen() {
   const [tab, setTab] = useState<'list' | 'matrix'>('list');
   const [subject, setSubject] = useState('全部');
 
+  const wrongQuery = useQuery({
+    queryKey: ['wrong-book'],
+    queryFn: () => getWrongBook({ pageSize: 200 }),
+  });
+  const matrixQuery = useQuery({
+    queryKey: ['knowledge-matrix'],
+    queryFn: getKnowledgeMatrix,
+  });
+  const allWrong = useMemo(() => wrongQuery.data?.items ?? [], [wrongQuery.data]);
+  const matrix = useMemo(() => matrixQuery.data?.items ?? [], [matrixQuery.data]);
+
   const list = useMemo(
-    () => KAKOMON_WRONG_QUESTIONS.filter((w) => subject === '全部' || w.subject === subject),
-    [subject],
+    () => allWrong.filter((w) => subject === '全部' || w.subject === subject),
+    [allWrong, subject],
   );
   const listParam = useMemo(() => list.map((w) => w.questionId).join(','), [list]);
 
@@ -193,21 +203,21 @@ export default function WrongBookScreen() {
   }, [list]);
 
   const dueToday = useMemo(
-    () => KAKOMON_WRONG_QUESTIONS.filter((w) => w.nextReviewAt === '今天').length,
-    [],
+    () => allWrong.filter((w) => w.nextReviewAt === '今天').length,
+    [allWrong],
   );
   const nearMastered = useMemo(
-    () => KAKOMON_WRONG_QUESTIONS.filter((w) => w.masteryLevel === 2).length,
-    [],
+    () => allWrong.filter((w) => w.masteryLevel === 2).length,
+    [allWrong],
   );
   const todayList = useMemo(
-    () => KAKOMON_WRONG_QUESTIONS.filter((w) => w.nextReviewAt === '今天'),
-    [],
+    () => allWrong.filter((w) => w.nextReviewAt === '今天'),
+    [allWrong],
   );
   const todayParam = useMemo(() => todayList.map((w) => w.questionId).join(','), [todayList]);
   const notMastered = useMemo(
-    () => KAKOMON_WRONG_QUESTIONS.filter((w) => w.masteryLevel <= 1).length,
-    [],
+    () => allWrong.filter((w) => w.masteryLevel <= 1).length,
+    [allWrong],
   );
 
   const openWrong = useCallback(
@@ -311,7 +321,7 @@ export default function WrongBookScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>错题本</Text>
-          <Text style={styles.headerSub}>{KAKOMON_WRONG_QUESTIONS.length} 道 · 今日待复习 {dueToday}</Text>
+          <Text style={styles.headerSub}>{allWrong.length} 道 · 今日待复习 {dueToday}</Text>
         </View>
         <Pressable
           style={styles.backBtn}
@@ -352,7 +362,7 @@ export default function WrongBookScreen() {
           {StatsCard}
           {TabSwitcher}
           <View style={styles.section}>
-            {KAKOMON_KNOWLEDGE_MATRIX.map((g) => (
+            {matrix.map((g) => (
               <Card key={g.subject} style={styles.matrixCard}>
                 <View style={styles.matrixHeader}>
                   <View style={styles.matrixTitleRow}>
@@ -388,7 +398,7 @@ export default function WrongBookScreen() {
                 <Pressable
                   style={styles.redoBtn}
                   onPress={() => {
-                    const groupList = KAKOMON_WRONG_QUESTIONS.filter((w) => w.subject === g.subject);
+                    const groupList = allWrong.filter((w) => w.subject === g.subject);
                     if (groupList[0]) openWrong(groupList[0].questionId, groupList.map((w) => w.questionId).join(','));
                   }}
                 >

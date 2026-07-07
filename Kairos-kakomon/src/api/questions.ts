@@ -8,11 +8,6 @@ import type {
   RelatedQuestion,
   WrongQuestion,
 } from '@/types/question';
-import {
-  KAKOMON_KNOWLEDGE_MATRIX,
-  KAKOMON_QUESTIONS,
-  KAKOMON_WRONG_QUESTIONS,
-} from '@/mocks/data';
 import { apiRequest } from './client';
 
 // —— 后端响应形状（API-contract §2.13 / §2.14 / §2.15）——
@@ -111,46 +106,6 @@ export interface RelatedQuestionsResponse {
   isPro: boolean;
 }
 
-function paginate<T>(items: T[], page = 1, pageSize = 20): PaginatedResponse<T> {
-  const start = (page - 1) * pageSize;
-  const slice = items.slice(start, start + pageSize);
-  return {
-    items: slice,
-    total: items.length,
-    page,
-    pageSize,
-    hasMore: start + slice.length < items.length,
-  };
-}
-
-function applyFilters(items: KakomonQuestion[], params: QuestionListParams = {}) {
-  const keyword = params.keyword?.trim().toLowerCase();
-  return items.filter((q) => {
-    if (params.universityIds?.length && !params.universityIds.includes(q.universityId)) return false;
-    if (params.subjects?.length && !params.subjects.includes(q.subject)) return false;
-    if (params.years?.length && !params.years.includes(q.year)) return false;
-    if (params.knowledgePoints?.length) {
-      const hit = q.knowledgePoints.some((kp) => params.knowledgePoints!.includes(kp));
-      if (!hit) return false;
-    }
-    if (keyword) {
-      const hay = `${q.title} ${q.subject} ${q.questionNo} ${q.knowledgePoints.join(' ')}`.toLowerCase();
-      if (!hay.includes(keyword)) return false;
-    }
-    return true;
-  });
-}
-
-function sortQuestions(items: KakomonQuestion[], sort?: QuestionListParams['sort']) {
-  const sorted = [...items];
-  if (sort === 'year_desc') {
-    sorted.sort((a, b) => b.year - a.year);
-  } else if (sort === 'difficulty_desc') {
-    sorted.sort((a, b) => (b.crowdDifficultyRate ?? 0) - (a.crowdDifficultyRate ?? 0));
-  }
-  return sorted;
-}
-
 export async function getQuestions(
   params?: QuestionListParams,
 ): Promise<PaginatedResponse<KakomonQuestion>> {
@@ -158,59 +113,40 @@ export async function getQuestions(
   const subject = params?.subjects?.[0];
   const kp = params?.knowledgePoints?.[0];
   const year = params?.years?.[0];
-  try {
-    const raw = await apiRequest<{
-      items: QuestionListItemRaw[]; total: number; page: number; pageSize: number; hasMore: boolean;
-    }>('/api/questions', {
-      query: {
-        universityId: uni, subject, knowledgePoint: kp, year,
-        keyword: params?.keyword,
-        page: params?.page ?? 1, pageSize: params?.pageSize ?? 20,
-      },
-    });
-    if (raw && Array.isArray(raw.items) && raw.items.length > 0) {
-      return {
-        items: raw.items.map(listItemToQuestion),
-        total: raw.total, page: raw.page, pageSize: raw.pageSize, hasMore: raw.hasMore,
-      };
-    }
-  } catch {
-    // 落回 mock
-  }
-  const filtered = sortQuestions(applyFilters(KAKOMON_QUESTIONS, params), params?.sort);
-  return paginate(filtered, params?.page ?? 1, params?.pageSize ?? 20);
+  const raw = await apiRequest<{
+    items: QuestionListItemRaw[]; total: number; page: number; pageSize: number; hasMore: boolean;
+  }>('/api/questions', {
+    query: {
+      universityId: uni, subject, knowledgePoint: kp, year,
+      keyword: params?.keyword,
+      page: params?.page ?? 1, pageSize: params?.pageSize ?? 20,
+    },
+  });
+  return {
+    items: (raw.items ?? []).map(listItemToQuestion),
+    total: raw.total, page: raw.page, pageSize: raw.pageSize, hasMore: raw.hasMore,
+  };
 }
 
 export async function getQuestion(id: string): Promise<KakomonQuestion> {
-  try {
-    const raw = await apiRequest<QuestionDetailRaw>(`/api/questions/${encodeURIComponent(id)}`);
-    if (raw && raw.id) return detailToQuestion(raw);
-  } catch {
-    // 落回 mock
-  }
-  const hit = KAKOMON_QUESTIONS.find((q) => q.id === id);
-  if (!hit) throw new Error(`Question not found: ${id}`);
-  return hit;
+  const raw = await apiRequest<QuestionDetailRaw>(`/api/questions/${encodeURIComponent(id)}`);
+  return detailToQuestion(raw);
 }
 
 export async function getQuestionRecommendations(limit = 10): Promise<RecommendationsResponse> {
-  const items = KAKOMON_QUESTIONS.slice(0, limit);
-  const basedOn = Array.from(new Set(items.flatMap((q) => q.knowledgePoints))).slice(0, 3);
-  return { items, basedOn, total: items.length };
+  const raw = await apiRequest<{
+    items: QuestionListItemRaw[]; basedOn: string[]; total: number;
+  }>('/api/questions/recommendations', { query: { limit } });
+  return {
+    items: (raw.items ?? []).map(listItemToQuestion),
+    basedOn: raw.basedOn ?? [],
+    total: raw.total,
+  };
 }
 
 export async function getRelatedQuestions(id: string): Promise<RelatedQuestionsResponse> {
-  try {
-    const raw = await apiRequest<RelatedRaw[]>(`/api/questions/${encodeURIComponent(id)}/related`);
-    if (Array.isArray(raw) && raw.length > 0) {
-      const items = raw.map(relatedToFront);
-      return { items, level3Total: items.filter((r) => r.level === 3).length, isPro: false };
-    }
-  } catch {
-    // 落回 mock
-  }
-  const hit = KAKOMON_QUESTIONS.find((q) => q.id === id);
-  const items = hit?.relatedQuestions ?? [];
+  const raw = await apiRequest<RelatedRaw[]>(`/api/questions/${encodeURIComponent(id)}/related`);
+  const items = (raw ?? []).map(relatedToFront);
   return { items, level3Total: items.filter((r) => r.level === 3).length, isPro: false };
 }
 
@@ -218,38 +154,39 @@ export async function updateQuestionMastery(
   id: string,
   status: MasteryStatus,
 ): Promise<{ questionId: string; masteryStatus: MasteryStatus; weakPointsUpdated: boolean }> {
-  return { questionId: id, masteryStatus: status, weakPointsUpdated: true };
+  return apiRequest(`/api/questions/${encodeURIComponent(id)}/mastery`, {
+    method: 'PUT',
+    body: { masteryStatus: status },
+  });
 }
 
 export async function voteQuestionDifficulty(
   id: string,
   vote: DifficultyLevel,
 ): Promise<{ questionId: string; vote: DifficultyLevel; crowdVotes: Record<DifficultyLevel, number> }> {
-  const hit = KAKOMON_QUESTIONS.find((q) => q.id === id);
-  const base = hit?.crowdVotes ?? { easy: 0, medium: 0, hard: 0 };
-  const crowdVotes: Record<DifficultyLevel, number> = {
-    easy: base.easy ?? 0,
-    medium: base.medium ?? 0,
-    hard: base.hard ?? 0,
-    very_hard: 0,
-  };
-  crowdVotes[vote] = (crowdVotes[vote] ?? 0) + 1;
-  return { questionId: id, vote, crowdVotes };
+  return apiRequest(`/api/questions/${encodeURIComponent(id)}/difficulty-vote`, {
+    method: 'POST',
+    body: { vote },
+  });
 }
 
 export async function setQuestionFavorite(
   id: string,
   favorite: boolean,
 ): Promise<{ questionId: string; favorite: boolean }> {
-  return { questionId: id, favorite };
+  return apiRequest(`/api/questions/${encodeURIComponent(id)}/favorite`, {
+    method: favorite ? 'POST' : 'DELETE',
+  });
 }
 
 export async function getWrongBook(
   params?: { page?: number; pageSize?: number },
 ): Promise<PaginatedResponse<WrongQuestion>> {
-  return paginate(KAKOMON_WRONG_QUESTIONS, params?.page ?? 1, params?.pageSize ?? 20);
+  return apiRequest('/api/questions/wrong-book', {
+    query: { page: params?.page ?? 1, pageSize: params?.pageSize ?? 20 },
+  });
 }
 
 export async function getKnowledgeMatrix(): Promise<{ items: KnowledgeMatrixGroup[] }> {
-  return { items: KAKOMON_KNOWLEDGE_MATRIX };
+  return apiRequest('/api/questions/knowledge-matrix');
 }

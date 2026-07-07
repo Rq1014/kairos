@@ -1,6 +1,5 @@
 import type { ExamPaper } from '@/types/question';
 import { apiRequest } from './client';
-import { KAKOMON_PAPERS } from '@/mocks/data';
 
 export interface PaperQueryParams {
   universityId?: string;
@@ -70,48 +69,27 @@ function listItemToExamPaper(raw: PaperListItemRaw, scope: PaperQueryParams): Ex
 
 export async function getPapers(params: PaperQueryParams = {}): Promise<ExamPaper[]> {
   if (!params.universityId || !params.graduateSchool) return [];
-  try {
-    const raw = await apiRequest<PaperListItemRaw[]>('/api/papers', {
-      query: { universityId: params.universityId, graduateSchool: params.graduateSchool },
-    });
-    if (Array.isArray(raw) && raw.length > 0) {
-      return raw.map((r) => listItemToExamPaper(r, params)).sort((a, b) => b.year - a.year);
-    }
-  } catch {
-    // 落回 mock
-  }
-  return KAKOMON_PAPERS.filter((p) => {
-    if (params.universityId && p.universityId !== params.universityId) return false;
-    if (params.graduateSchool && p.graduateSchool !== params.graduateSchool) return false;
-    if (params.majorId && p.majorId && p.majorId !== params.majorId) return false;
-    return true;
-  }).sort((a, b) => b.year - a.year);
+  const raw = await apiRequest<PaperListItemRaw[]>('/api/papers', {
+    query: { universityId: params.universityId, graduateSchool: params.graduateSchool },
+  });
+  return (raw ?? []).map((r) => listItemToExamPaper(r, params)).sort((a, b) => b.year - a.year);
 }
 
 export async function getPaper(id: string): Promise<PaperDetail> {
-  try {
-    const raw = await apiRequest<PaperDetailRaw>(`/api/papers/${encodeURIComponent(id)}`);
-    if (raw && raw.id) {
-      return {
-        id: raw.id,
-        universityId: raw.universityId,
-        graduateSchool: raw.graduateSchool,
-        majorId: raw.majorId ?? null,
-        year: raw.year,
-        subject: raw.subject,
-        title: raw.title,
-        durationMinutes: raw.durationMinutes,
-        totalScore: raw.totalScore ?? null,
-        selectRule: raw.selectRule,
-        instructions: raw.instructions ?? [],
-        questionIds: (raw.questions ?? []).map((q) => q.id),
-        questionDetails: raw.questions ?? [],
-      };
-    }
-  } catch {
-    // 落回 mock
-  }
-  const hit = KAKOMON_PAPERS.find((p) => p.id === id);
-  if (!hit) throw new Error(`Paper not found: ${id}`);
-  return { ...hit, questionDetails: [] };
+  const raw = await apiRequest<PaperDetailRaw>(`/api/papers/${encodeURIComponent(id)}`);
+  return {
+    id: raw.id,
+    universityId: raw.universityId,
+    graduateSchool: raw.graduateSchool,
+    majorId: raw.majorId ?? null,
+    year: raw.year,
+    subject: raw.subject,
+    title: raw.title,
+    durationMinutes: raw.durationMinutes,
+    totalScore: raw.totalScore ?? null,
+    selectRule: raw.selectRule,
+    instructions: raw.instructions ?? [],
+    questionIds: (raw.questions ?? []).map((q) => q.id),
+    questionDetails: raw.questions ?? [],
+  };
 }
