@@ -12,6 +12,7 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAttemptStore } from '@/store/attemptStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
+import { useDictStore } from '@/store/dictStore';
 import { useColors } from '@/constants/colors';
 
 useOnboardingStore.getState().setOnboardingDone();
@@ -19,6 +20,7 @@ useThemeStore.getState().hydrate();
 useAttemptStore.getState().hydrate();
 useFavoritesStore.getState().hydrate();
 useBrowseSchoolsStore.getState().hydrate();
+useDictStore.getState().hydrate();
 
 const queryClient = new QueryClient({
   defaultOptions: {
