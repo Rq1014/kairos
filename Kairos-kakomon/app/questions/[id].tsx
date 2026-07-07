@@ -18,7 +18,8 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Badge, Card, Chip, Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER, gradName } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { dictGradName } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { useAttemptStore } from '@/store/attemptStore';
@@ -378,7 +379,7 @@ export default function QuestionDetailScreen() {
               <Chip color={university.accent as 'blue' | 'teal' | 'indigo'} size="sm">
                 {university.nameCn}
               </Chip>
-              <Chip color="slate" size="sm">{gradName(question.universityId, question.graduateSchool)}</Chip>
+              <Chip color="slate" size="sm">{dictGradName(question.universityId, question.graduateSchool)}</Chip>
             </View>
             <Text style={styles.title}>{question.title}</Text>
             <Text style={styles.metaLine}>{question.year} · {question.subject} · {question.questionNo}</Text>

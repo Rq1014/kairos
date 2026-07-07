@@ -24,10 +24,9 @@ import type { EditTargetConfig, NextExam } from '@/types/user';
 import {
   KAKOMON_QUESTIONS,
   KAKOMON_UNIVERSITIES,
-  UNI_MAJORS,
   DEMO_USER,
-  gradName,
 } from '@/mocks/data';
+import { dictGradName, dictMajors, useDictStore } from '@/store/dictStore';
 
 const URGENCY_COLOR = (days: number) =>
   days < 30 ? '#f43f5e' : days < 90 ? '#f59e0b' : '#3b82f6';
@@ -103,6 +102,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 export default function StudyScreen() {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
+  // Subscribe to dict version so component re-renders when dictionary refreshes
+  useDictStore((s) => s.version);
   const queryClient = useQueryClient();
 
   const token = useAuthStore((s) => s.token);
@@ -231,9 +232,9 @@ export default function StudyScreen() {
                   const first = user.targetSchools[0];
                   const grad = first.gradSchool ?? '';
                   const major = first.majorId
-                    ? (UNI_MAJORS[`${first.universityId}::${grad}`]?.find((m) => m.id === first.majorId)?.label ?? null)
+                    ? (dictMajors(first.universityId, grad).find((m) => m.id === first.majorId)?.label ?? null)
                     : null;
-                  return [gradName(first.universityId, grad), major].filter(Boolean).join(' · ') || '未指定研究科';
+                  return [dictGradName(first.universityId, grad), major].filter(Boolean).join(' · ') || '未指定研究科';
                 })()}
               </Text>
             ) : (

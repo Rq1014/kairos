@@ -15,7 +15,8 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon, SchoolLogo } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, UNI_GRADS, KAKOMON_SEARCH_RECENT, KAKOMON_SEARCH_HOT, DEMO_USER, gradName } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, KAKOMON_SEARCH_RECENT, KAKOMON_SEARCH_HOT, DEMO_USER } from '@/mocks/data';
+import { dictGradName, dictGrads, useDictStore } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { canAccessQuestion, lockHint, type LockReason } from '@/utils/accessPolicy';
@@ -59,6 +60,8 @@ function BrowseDrillDown({
   styles: ReturnType<typeof makeStyles>;
 }) {
   const u = KAKOMON_UNIVERSITIES.find((x) => x.id === universityId);
+  // Subscribe to dict version so component re-renders when dictionary refreshes
+  useDictStore((s) => s.version);
 
   // 该校实际有题目的研究科（按题量），与预设研究科列表合并。
   const gradList = useMemo(() => {
@@ -66,7 +69,7 @@ function BrowseDrillDown({
     KAKOMON_QUESTIONS
       .filter((q) => q.universityId === universityId)
       .forEach((q) => counts.set(q.graduateSchool, (counts.get(q.graduateSchool) ?? 0) + 1));
-    const preset = UNI_GRADS[universityId] ?? [];
+    const preset = dictGrads(universityId);
     const names = Array.from(new Set([...preset, ...counts.keys()]));
     return names
       .map((name) => ({ name, count: counts.get(name) ?? 0 }))
@@ -94,7 +97,7 @@ function BrowseDrillDown({
         {grad && (
           <>
             <Text style={styles.crumbSep}>/</Text>
-            <Text style={styles.crumbCurrent} numberOfLines={1}>{gradName(universityId, grad)}</Text>
+            <Text style={styles.crumbCurrent} numberOfLines={1}>{dictGradName(universityId, grad)}</Text>
           </>
         )}
       </View>
@@ -109,7 +112,7 @@ function BrowseDrillDown({
         ) : (
           gradList.map((g) => (
             <Pressable key={g.name} style={styles.gradRow} onPress={() => onPickGrad(g.name)}>
-              <Text style={styles.gradName} numberOfLines={1}>{gradName(universityId, g.name)}</Text>
+              <Text style={styles.gradName} numberOfLines={1}>{dictGradName(universityId, g.name)}</Text>
               <Text style={styles.gradCount}>{g.count} 题</Text>
               <Icon name="chevronRight" size={16} color={Colors.textMuted} />
             </Pressable>
