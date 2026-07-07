@@ -164,7 +164,9 @@ export default function MockExamScreen() {
   const reorderBrowse = useBrowseSchoolsStore((s) => s.reorder);
 
   // 构建左栏：每个条目 = 学校+研究科+专业
-  const railEntries: RailEntry[] = useMemo(() => {
+  // 构建左栏：每个条目 = 学校+研究科+专业。轻量列表，无需 memo；
+  // 顶层 version 订阅已保证字典刷新时重渲，targetSchools/browseRaw 变化随重渲反映。
+  const railEntries: RailEntry[] = (() => {
     const out: RailEntry[] = [];
     (user.targetSchools ?? []).forEach((s) => {
       const grad = normGrad(s.universityId, s.gradSchool);
@@ -193,7 +195,7 @@ export default function MockExamScreen() {
       });
     });
     return out;
-  }, [user.targetSchools, browseRaw]);
+  })();
 
   const targetEntries = railEntries.filter((e) => e.isTarget);
   const browseEntries = railEntries.filter((e) => !e.isTarget);
