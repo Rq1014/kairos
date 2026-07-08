@@ -39,8 +39,8 @@ public class PaperQueryServiceImpl implements PaperQueryService {
     }
 
     @Override
-    public List<PaperListItemResponse> listByScope(String universityId, String graduateSchool) {
-        List<ExamPaperEntity> papers = paperMapper.findByScope(universityId, graduateSchool);
+    public List<PaperListItemResponse> listByScope(String universityId, String graduateSchool, String majorId) {
+        List<ExamPaperEntity> papers = paperMapper.findByScope(universityId, graduateSchool, majorId);
         var names = subjectNameMap();
         List<PaperListItemResponse> out = new ArrayList<>();
         for (ExamPaperEntity p : papers) {

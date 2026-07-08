@@ -26,8 +26,9 @@ public class PaperController {
     @GetMapping("/papers")
     public Result<List<PaperListItemResponse>> list(
             @RequestParam String universityId,
-            @RequestParam String graduateSchool) {
-        return Result.ok(paperQueryService.listByScope(universityId, graduateSchool));
+            @RequestParam String graduateSchool,
+            @RequestParam(required = false) String majorId) {
+        return Result.ok(paperQueryService.listByScope(universityId, graduateSchool, majorId));
     }
 
     /** 单份试卷(含大问列表 + 选做规则 + 时长)。 */

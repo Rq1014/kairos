@@ -32,6 +32,9 @@
         WHERE status = 1
           AND university_code = #{universityCode}
           AND grad_school_code = #{gradSchoolCode}
-        ORDER BY year DESC, sort_order DESC, id ASC
+        <if test="majorCode != null and majorCode != ''">
+          AND major_code = #{majorCode}
+        </if>
+        ORDER BY year DESC, subject_code ASC, sort_order DESC, id ASC
     </select>
 </mapper>

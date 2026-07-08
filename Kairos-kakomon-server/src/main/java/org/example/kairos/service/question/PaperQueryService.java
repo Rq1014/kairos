@@ -7,7 +7,7 @@ import java.util.List;
 
 /** 试卷查询服务(只读)。 */
 public interface PaperQueryService {
-    List<PaperListItemResponse> listByScope(String universityId, String graduateSchool);
+    List<PaperListItemResponse> listByScope(String universityId, String graduateSchool, String majorId);
 
     PaperResponse getByCode(String code);
 }

@@ -14,5 +14,6 @@ public interface ExamPaperMapper {
 
     /** 按大学+研究科查试卷列表(模考首页用) */
     List<ExamPaperEntity> findByScope(@Param("universityCode") String universityCode,
-                                      @Param("gradSchoolCode") String gradSchoolCode);
+                                      @Param("gradSchoolCode") String gradSchoolCode,
+                                      @Param("majorCode") String majorCode);
 }
