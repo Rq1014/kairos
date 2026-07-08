@@ -18,8 +18,9 @@ public interface QuestionMapper {
     /** 多条件分页筛选(列表,不取 content_blocks) */
     List<QuestionEntity> findByFilter(@Param("universityCode") String universityCode,
                                       @Param("gradSchoolCode") String gradSchoolCode,
+                                      @Param("majorCode") String majorCode,
                                       @Param("year") Integer year,
-                                      @Param("subject") String subject,
+                                      @Param("subjectCode") String subjectCode,
                                       @Param("knowledgePoint") String knowledgePoint,
                                       @Param("keyword") String keyword,
                                       @Param("offset") int offset,
@@ -28,8 +29,9 @@ public interface QuestionMapper {
     /** 与 findByFilter 配套计数 */
     long countByFilter(@Param("universityCode") String universityCode,
                        @Param("gradSchoolCode") String gradSchoolCode,
+                       @Param("majorCode") String majorCode,
                        @Param("year") Integer year,
-                       @Param("subject") String subject,
+                       @Param("subjectCode") String subjectCode,
                        @Param("knowledgePoint") String knowledgePoint,
                        @Param("keyword") String keyword);
 

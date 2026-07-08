@@ -28,13 +28,14 @@ public class QuestionController {
     public Result<QuestionListResponse> list(
             @RequestParam(required = false) String universityId,
             @RequestParam(required = false) String graduateSchool,
+            @RequestParam(required = false) String majorId,
             @RequestParam(required = false) Integer year,
-            @RequestParam(required = false) String subject,
+            @RequestParam(required = false) String subjectCode,
             @RequestParam(required = false) String knowledgePoint,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int pageSize) {
-        return Result.ok(questionQueryService.list(universityId, graduateSchool, year, subject,
+        return Result.ok(questionQueryService.list(universityId, graduateSchool, majorId, year, subjectCode,
                 knowledgePoint, keyword, page, pageSize));
     }
 

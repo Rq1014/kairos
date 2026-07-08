@@ -8,8 +8,8 @@ import java.util.List;
 
 /** 大问查询服务(只读)。 */
 public interface QuestionQueryService {
-    QuestionListResponse list(String universityId, String graduateSchool, Integer year,
-                              String subject, String knowledgePoint, String keyword,
+    QuestionListResponse list(String universityId, String graduateSchool, String majorId, Integer year,
+                              String subjectCode, String knowledgePoint, String keyword,
                               int page, int pageSize);
 
     QuestionResponse getByCode(String code);
