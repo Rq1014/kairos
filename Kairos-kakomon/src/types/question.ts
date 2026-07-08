@@ -8,10 +8,12 @@ export interface KakomonQuestion {
   id: string;
   universityId: string;
   graduateSchool: string;
-  /** 该题归属的专业 id 列表（来自 UNI_MAJORS）。一题可属于多个专业（共享题），缺省视为该研究科全专业通用。 */
-  majorIds?: string[];
+  /** 该题归属的主专业 id（来自 UNI_MAJORS）。缺省视为该研究科全专业通用。 */
+  majorId?: string;
   year: number;
   subject: string;
+  /** 科目机器 code（用于过滤/查询，如 "math"）。展示名用 subject。 */
+  subjectCode: string;
   questionNo: string;
   title: string;
   bodyText?: string;
@@ -132,6 +134,8 @@ export interface ExamPaper {
   majorId?: string | null;
   year: number;
   subject: string;
+  /** 科目机器 code（用于过滤/查询）。展示名用 subject。 */
+  subjectCode: string;
   /** 展示标题，如「平成29年度 大学院入学試験問題 数学」。 */
   title: string;
   /** 考试时长（分钟），用于模考倒计时。 */

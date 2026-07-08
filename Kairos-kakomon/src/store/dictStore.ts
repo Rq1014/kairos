@@ -22,6 +22,7 @@ function buildSeed(): NormalizedDict {
     gradsByUni: { ...UNI_GRADS },
     majorsByKey: { ...UNI_MAJORS },
     gradNameMap: { ...GRAD_SCHOOL_NAMES },
+    subjectsByKey: {},
     version: 0,
   };
 }
@@ -38,7 +39,8 @@ function isValidCache(v: unknown): v is NormalizedDict {
     typeof d.version === 'number' &&
     typeof d.gradsByUni === 'object' &&
     typeof d.majorsByKey === 'object' &&
-    typeof d.gradNameMap === 'object'
+    typeof d.gradNameMap === 'object' &&
+    typeof d.subjectsByKey === 'object'
   );
 }
 
@@ -58,6 +60,7 @@ export const useDictStore = create<DictState>((set, get) => ({
             gradsByUni: parsed.gradsByUni,
             majorsByKey: parsed.majorsByKey,
             gradNameMap: parsed.gradNameMap,
+            subjectsByKey: parsed.subjectsByKey,
             version: parsed.version,
             source: 'cache',
           });
@@ -78,6 +81,7 @@ export const useDictStore = create<DictState>((set, get) => ({
             gradsByUni: fresh.gradsByUni,
             majorsByKey: fresh.majorsByKey,
             gradNameMap: fresh.gradNameMap,
+            subjectsByKey: fresh.subjectsByKey,
             version: fresh.version,
             source: 'network',
           });
@@ -107,6 +111,12 @@ export function dictGrads(uni: string): string[] {
 export function dictMajors(uni: string, gradCode: string): MajorOption[] {
   const key = `${uni}::${gradCode}`;
   return get().majorsByKey[key] ?? UNI_MAJORS[key] ?? [];
+}
+
+/** 某大学某研究科某专业下的科目列表（来自后端 tree subjects）。 */
+export function dictSubjects(universityId: string, gradCode: string, majorId: string): { code: string; nameJp: string }[] {
+  const key = `${universityId}::${gradCode}::${majorId}`;
+  return get().subjectsByKey[key] ?? [];
 }
 
 function get() {
