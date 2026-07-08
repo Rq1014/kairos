@@ -21,9 +21,9 @@ CREATE TABLE `exam_paper` (
     `code`              VARCHAR(80)     NOT NULL                COMMENT '对外业务 id, 如 p-todai-2024-math',
     `university_code`   VARCHAR(40)     NOT NULL                COMMENT '大学 code, 关联 university.code',
     `grad_school_code`  VARCHAR(80)     NOT NULL                COMMENT '研究科 code / nameJp',
-    `major_code`        VARCHAR(80)     NULL                    COMMENT '专业 code, 可空',
+    `major_code`        VARCHAR(80)     NOT NULL                COMMENT '专业 code, 关联 major.code',
     `year`              SMALLINT        NOT NULL                COMMENT '年度, 如 2024',
-    `subject`           VARCHAR(60)     NOT NULL                COMMENT '科目, 如 数学',
+    `subject_code`      VARCHAR(40)     NOT NULL                COMMENT '科目 code, 关联 subject.code',
     `title`             VARCHAR(200)    NOT NULL                COMMENT '展示标题',
     `duration_minutes`  SMALLINT        NULL                    COMMENT '考试时长(分钟), 供模考倒计时',
     `total_score`       INT             NULL                    COMMENT '总分, 可空',
@@ -36,7 +36,7 @@ CREATE TABLE `exam_paper` (
     `updated_at`        DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_paper_code` (`code`),
-    UNIQUE KEY `uk_paper_scope` (`university_code`, `grad_school_code`, `year`, `subject`),
+    UNIQUE KEY `uk_paper_scope` (`university_code`, `grad_school_code`, `major_code`, `year`, `subject_code`),
     KEY `idx_paper_filter` (`university_code`, `grad_school_code`, `status`)
 ) ENGINE = InnoDB COMMENT = '试卷';
 
@@ -49,8 +49,9 @@ CREATE TABLE `question` (
     `paper_code`             VARCHAR(80)     NULL                    COMMENT '所属试卷 code, 可空(散题)',
     `university_code`        VARCHAR(40)     NOT NULL                COMMENT '冗余: 大学 code',
     `grad_school_code`       VARCHAR(80)     NOT NULL                COMMENT '冗余: 研究科 code',
+    `major_code`             VARCHAR(80)     NOT NULL                COMMENT '冗余: 专业 code',
     `year`                   SMALLINT        NOT NULL                COMMENT '冗余: 年度',
-    `subject`                VARCHAR(60)     NOT NULL                COMMENT '冗余: 科目',
+    `subject_code`           VARCHAR(40)     NOT NULL                COMMENT '冗余: 科目 code',
     `question_no`            VARCHAR(20)     NOT NULL                COMMENT '题号, 如 第3问',
     `title`                  VARCHAR(200)    NOT NULL                COMMENT '大问标题',
     `order_index`            INT             NOT NULL DEFAULT 0      COMMENT '卷内顺序',
@@ -65,7 +66,7 @@ CREATE TABLE `question` (
     `updated_at`             DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_question_code` (`code`),
-    KEY `idx_q_filter` (`university_code`, `grad_school_code`, `year`, `subject`, `status`),
+    KEY `idx_q_filter` (`university_code`, `grad_school_code`, `major_code`, `year`, `subject_code`, `status`),
     KEY `idx_q_paper` (`paper_code`, `order_index`),
     FULLTEXT KEY `ft_q_body` (`title`, `body_text`) WITH PARSER ngram
 ) ENGINE = InnoDB COMMENT = '大问(第N问)';
