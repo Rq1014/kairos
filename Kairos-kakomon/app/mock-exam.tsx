@@ -219,7 +219,7 @@ export default function MockExamScreen() {
     queryFn: () => getPapers({ universityId: activeEntry!.universityId, graduateSchool: activeEntry!.gradSchool, majorId: activeEntry!.majorId ?? undefined }),
     enabled: !!activeEntry,
   });
-  const papersForEntry: ExamPaper[] = papersQuery.data ?? [];
+  const papersForEntry: ExamPaper[] = useMemo(() => papersQuery.data ?? [], [papersQuery.data]);
 
   const yearGroups: YearGroup[] = useMemo(() => {
     const byYear = new Map<number, Map<string, string>>();
