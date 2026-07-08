@@ -13,18 +13,18 @@ import {
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { getPapers } from '@/api/papers';
+import { getUniversities } from '@/api/universities';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
-import { AdGateModal, Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { Icon } from '@/components/ui';
+import { DEMO_USER } from '@/mocks/data';
 import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
-import { useAdStore } from '@/store/adStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
-import { canAccessQuestion, schoolLimit } from '@/utils/accessPolicy';
-import type { KakomonQuestion, ExamPaper } from '@/types/question';
+import { schoolLimit } from '@/utils/accessPolicy';
+import type { ExamPaper } from '@/types/question';
 
 /**
  * 左栏一项 = 学校 + 研究科 + 专业（平铺）。
@@ -41,7 +41,6 @@ interface RailEntry {
 interface YearGroup {
   year: number;
   subjects: { code: string; name: string }[];
-  questions: KakomonQuestion[];
 }
 
 const normGrad = (universityId: string, gradSchool?: string) =>
@@ -150,9 +149,6 @@ export default function MockExamScreen() {
   const authToken = useAuthStore((s) => s.token) ?? '';
   const refreshToken = useAuthStore((s) => s.refreshToken);
 
-  const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
-  useAdStore((s) => s.unlockedSchoolYears);
-
   const TARGET_LIMIT = schoolLimit(user);
   const accent500: Record<string, string> = {
     blue: Colors.blue500, teal: Colors.teal500, indigo: Colors.indigo500, amber: Colors.amber500, rose: Colors.rose500,
@@ -201,97 +197,41 @@ export default function MockExamScreen() {
   const browseEntries = railEntries.filter((e) => !e.isTarget);
 
   const [activeKey, setActiveKey] = useState<string>(railEntries[0]?.key ?? '');
-  // 每张年份卡独立管理其选中的 subject 和下拉展开状态
-  const [yearSubjectMap, setYearSubjectMap] = useState<Record<number, string>>({});
   const [yearDropdownOpen, setYearDropdownOpen] = useState<number | null>(null);
 
   const activeEntry = railEntries.find((e) => e.key === activeKey);
-  const activeUni = activeEntry ? KAKOMON_UNIVERSITIES.find((u) => u.id === activeEntry.universityId) : undefined;
+
+  const universitiesQuery = useQuery({
+    queryKey: ['universities', 'all'],
+    queryFn: () => getUniversities({ page: 1, pageSize: 100 }),
+  });
+  const universities = universitiesQuery.data?.items ?? [];
+
+  const activeUni = activeEntry ? universities.find((u) => u.id === activeEntry.universityId) : undefined;
 
   function selectEntry(key: string) {
     setActiveKey(key);
-    setYearSubjectMap({});
     setYearDropdownOpen(null);
   }
 
-  // 当前条目的题池
-  const pool = useMemo(() => {
-    if (!activeEntry) return [];
-    return KAKOMON_QUESTIONS.filter((q) => {
-      if (q.universityId !== activeEntry.universityId) return false;
-      if (q.graduateSchool !== activeEntry.gradSchool) return false;
-      if (activeEntry.majorId) {
-        if (q.majorId && q.majorId !== activeEntry.majorId) return false;
-      }
-      return true;
-    });
-  }, [activeEntry]);
-
-  // 按年聚合
-  const yearGroups: YearGroup[] = useMemo(() => {
-    const map = new Map<number, KakomonQuestion[]>();
-    pool.forEach((q) => {
-      if (!map.has(q.year)) map.set(q.year, []);
-      map.get(q.year)!.push(q);
-    });
-    return [...map.entries()]
-      .sort(([a], [b]) => b - a)
-      .map(([year, qs]) => {
-        const seen = new Map<string, string>();
-        qs.forEach((q) => { if (!seen.has(q.subjectCode)) seen.set(q.subjectCode, q.subject); });
-        return {
-          year,
-          subjects: [...seen.entries()].map(([code, name]) => ({ code, name })),
-          questions: qs,
-        };
-      });
-  }, [pool]);
-
   const papersQuery = useQuery({
-    queryKey: ['papers', activeEntry?.universityId ?? '', activeEntry?.gradSchool ?? ''],
-    queryFn: () => getPapers({ universityId: activeEntry!.universityId, graduateSchool: activeEntry!.gradSchool }),
+    queryKey: ['papers', activeEntry?.universityId ?? '', activeEntry?.gradSchool ?? '', activeEntry?.majorId ?? ''],
+    queryFn: () => getPapers({ universityId: activeEntry!.universityId, graduateSchool: activeEntry!.gradSchool, majorId: activeEntry!.majorId ?? undefined }),
     enabled: !!activeEntry,
   });
   const papersForEntry: ExamPaper[] = papersQuery.data ?? [];
 
-  const findPaper = (year: number, subjectCode: string) =>
-    papersForEntry.find((p) => p.year === year && p.subjectCode === subjectCode) ?? null;
-
-  function getSelectedSubject(year: number, subjects: { code: string; name: string }[]): string {
-    return yearSubjectMap[year] ?? subjects[0]?.code ?? '';
-  }
-
-  function selectYearSubject(year: number, subjectCode: string) {
-    setYearSubjectMap((m) => ({ ...m, [year]: subjectCode }));
-    setYearDropdownOpen(null);
-  }
-
-  function startExam(year: number, subjectCode: string) {
-    if (!activeEntry) return;
-    const qs = pool.filter((q) => q.year === year && q.subjectCode === subjectCode);
-    if (qs.length === 0) return;
-    const ids = qs.map((q) => q.id).join(',');
-    const subjectName = qs[0].subject;
-    const paper = findPaper(year, subjectCode);
-    const paperParam = paper ? `&paperCode=${encodeURIComponent(paper.id)}` : '';
-    const extra = paper
-      ? `${paper.durationMinutes ? `&durationMinutes=${paper.durationMinutes}` : ''}${paper.selectRule ? `&selectTotal=${paper.selectRule.total}&selectChoose=${paper.selectRule.choose}` : ''}`
-      : '';
-    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subjectName}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}${extra}${paperParam}` as any);
-  }
-
-  // 广告门
-  const [gate, setGate] = useState<{ year: number; subjectCode: string; subjectName: string } | null>(null);
-
-  function handleExamPress(year: number, subjectCode: string, subjectName: string) {
-    if (!activeEntry) return;
-    const access = canAccessQuestion(user, { universityId: activeEntry.universityId, gradSchool: activeEntry.gradSchool, year });
-    if (access.allowed) {
-      startExam(year, subjectCode);
-    } else {
-      setGate({ year, subjectCode, subjectName });
-    }
-  }
+  const yearGroups: YearGroup[] = useMemo(() => {
+    const byYear = new Map<number, Map<string, string>>();
+    papersForEntry.forEach((p) => {
+      if (!byYear.has(p.year)) byYear.set(p.year, new Map());
+      const sm = byYear.get(p.year)!;
+      if (!sm.has(p.subjectCode)) sm.set(p.subjectCode, p.subject);
+    });
+    return [...byYear.entries()]
+      .sort(([a], [b]) => b - a)
+      .map(([year, sm]) => ({ year, subjects: [...sm.entries()].map(([code, name]) => ({ code, name })) }));
+  }, [papersForEntry]);
 
   // 添加流程
   const [addOpen, setAddOpen] = useState(false);
@@ -318,15 +258,14 @@ export default function MockExamScreen() {
     }
     const newKey = `${pendingUni}::${grad}::`;
     setActiveKey(newKey);
-    setYearSubjectMap({});
     setYearDropdownOpen(null);
     setAddOpen(false);
   }
 
   function deleteEntry(entry: RailEntry) {
-    const u = KAKOMON_UNIVERSITIES.find((x) => x.id === entry.universityId);
+    const u = universities.find((x) => x.id === entry.universityId);
     const clearActive = () => {
-      if (entry.key === activeKey) { setActiveKey(''); setYearSubjectMap({}); setYearDropdownOpen(null); }
+      if (entry.key === activeKey) { setActiveKey(''); setYearDropdownOpen(null); }
       setMenuFor(null);
     };
     if (entry.isTarget) {
@@ -371,16 +310,16 @@ export default function MockExamScreen() {
     setMenuFor(null);
   }
 
-  const addCandidates = KAKOMON_UNIVERSITIES.filter((u) => {
+  const addCandidates = universities.filter((u) => {
     const kw = addQuery.trim().toLowerCase();
     if (!kw) return true;
     return u.short.toLowerCase().includes(kw) || u.nameCn.includes(addQuery) || u.nameJp.includes(addQuery) || u.nameEn.toLowerCase().includes(kw);
   });
-  const pendingUniObj = pendingUni ? KAKOMON_UNIVERSITIES.find((u) => u.id === pendingUni) : null;
+  const pendingUniObj = pendingUni ? universities.find((u) => u.id === pendingUni) : null;
   const pendingGrads = pendingUni ? dictGrads(pendingUni) : [];
 
   function renderRailItem(e: RailEntry) {
-    const u = KAKOMON_UNIVERSITIES.find((x) => x.id === e.universityId);
+    const u = universities.find((x) => x.id === e.universityId);
     if (!u) return null;
     const active = activeKey === e.key;
     const bg = accent500[u.accent] ?? Colors.indigo500;
@@ -442,86 +381,48 @@ export default function MockExamScreen() {
               <Text style={styles.rightGrad}>
                 {dictGradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
               </Text>
-              <Text style={styles.rightSub}>{yearGroups.length} 个年度 · {pool.length} 道题</Text>
+              <Text style={styles.rightSub}>{yearGroups.length} 个年度</Text>
 
-              {yearGroups.length === 0 ? (
+              {papersQuery.isLoading ? (
+                <View style={styles.empty}><Text style={styles.emptyText}>加载中…</Text></View>
+              ) : papersQuery.isError ? (
                 <View style={styles.empty}>
                   <Icon name="clock" size={28} color={Colors.textMuted} />
-                  <Text style={styles.emptyText}>该范围暂无真题</Text>
+                  <Text style={styles.emptyText}>试卷加载失败，请重试</Text>
+                </View>
+              ) : yearGroups.length === 0 ? (
+                <View style={styles.empty}>
+                  <Icon name="clock" size={28} color={Colors.textMuted} />
+                  <Text style={styles.emptyText}>该范围暂无试卷</Text>
                 </View>
               ) : (
                 yearGroups.map((yg) => {
-                  const selectedCode = getSelectedSubject(yg.year, yg.subjects);
-                  const selectedName = yg.subjects.find((s) => s.code === selectedCode)?.name ?? selectedCode;
                   const isOpen = yearDropdownOpen === yg.year;
-                  const subjectQs = yg.questions.filter((q) => q.subjectCode === selectedCode);
-                  const access = canAccessQuestion(user, { universityId: activeEntry.universityId, gradSchool: activeEntry.gradSchool, year: yg.year });
-                  const unlocked = access.allowed;
                   return (
                     <View key={yg.year} style={styles.paperCard}>
                       <View style={styles.paperTop}>
                         <Text style={styles.paperYear}>{yg.year} 年度</Text>
-                        <Text style={styles.paperMeta}>{yg.questions.length} 题</Text>
+                        <Text style={styles.paperMeta}>{yg.subjects.length} 个科目</Text>
                       </View>
-
-                      {/* 科目下拉 */}
                       <Pressable style={styles.subjectDropdown} onPress={() => setYearDropdownOpen(isOpen ? null : yg.year)}>
-                        <Text style={styles.subjectDropdownText}>{selectedName || '选择科目'}</Text>
+                        <Text style={styles.subjectDropdownText}>选择科目</Text>
                         <Icon name={isOpen ? 'chevronUp' : 'chevronDown'} size={13} color={Colors.textPrimary} />
                       </Pressable>
-
                       {isOpen && (
                         <View style={styles.subjectMenu}>
-                          {yg.subjects.map((subj, i) => {
-                            const isActive = subj.code === selectedCode;
-                            return (
-                              <Pressable
-                                key={subj.code}
-                                style={[styles.subjectMenuItem, isActive && styles.subjectMenuItemActive, i === yg.subjects.length - 1 && styles.subjectMenuItemLast]}
-                                onPress={() => selectYearSubject(yg.year, subj.code)}
-                              >
-                                <Text style={[styles.subjectMenuItemText, isActive && styles.subjectMenuItemTextActive]}>{subj.name}</Text>
-                              </Pressable>
-                            );
-                          })}
+                          {yg.subjects.map((subj, i) => (
+                            <Pressable
+                              key={subj.code}
+                              style={[styles.subjectMenuItem, i === yg.subjects.length - 1 && styles.subjectMenuItemLast]}
+                              onPress={() => {
+                                if (!activeEntry) return;
+                                router.push(`/exam-papers?universityId=${activeEntry.universityId}&graduateSchool=${encodeURIComponent(activeEntry.gradSchool)}&majorId=${activeEntry.majorId ?? ''}&year=${yg.year}&subjectCode=${encodeURIComponent(subj.code)}&subjectName=${encodeURIComponent(subj.name)}` as any);
+                              }}
+                            >
+                              <Text style={styles.subjectMenuItemText}>{subj.name}</Text>
+                            </Pressable>
+                          ))}
                         </View>
-                      )}
-
-                      <Text style={styles.questionCount}>{selectedName}：{subjectQs.length} 道题</Text>
-                      {(() => {
-                        const paper = findPaper(yg.year, selectedCode);
-                        if (!paper) return null;
-                        return (
-                          <Text style={styles.paperMeta}>
-                            {paper.durationMinutes ? `⏱ ${paper.durationMinutes} 分` : ''}
-                            {paper.selectRule ? `　·　${paper.selectRule.total} 题选 ${paper.selectRule.choose}` : ''}
-                          </Text>
-                        );
-                      })()}
-
-                      {access.viaAd && (
-                        <View style={styles.unlockedBadge}>
-                          <Icon name="check" size={9} color={Colors.green600} />
-                          <Text style={styles.unlockedText}>已解锁 · 24h</Text>
-                        </View>
-                      )}
-                      {unlocked && !access.viaVip && !access.viaAd && (
-                        <View style={styles.unlockedBadge}>
-                          <Icon name="check" size={9} color={Colors.green600} />
-                          <Text style={styles.unlockedText}>目标研究科 · 免费</Text>
-                        </View>
-                      )}
-
-                      {unlocked ? (
-                        <Pressable style={styles.startBtn} onPress={() => startExam(yg.year, selectedCode)}>
-                          <Icon name="clock" size={14} color="#fff" />
-                          <Text style={styles.startBtnText}>开始模考（{subjectQs.length} 题）</Text>
-                        </Pressable>
-                      ) : (
-                        <Pressable style={styles.lockBtn} onPress={() => handleExamPress(yg.year, selectedCode, selectedName)}>
-                          <Icon name="eye" size={14} color="#fff" />
-                          <Text style={styles.lockBtnText}>看广告解锁（24h）</Text>
-                        </Pressable>
                       )}
                     </View>
                   );
@@ -540,7 +441,7 @@ export default function MockExamScreen() {
             {menuFor && (() => {
               const group = menuFor.isTarget ? targetEntries : browseEntries;
               const idx = group.findIndex((e) => e.key === menuFor.key);
-              const u = KAKOMON_UNIVERSITIES.find((x) => x.id === menuFor.universityId);
+              const u = universities.find((x) => x.id === menuFor.universityId);
               return (
                 <>
                   <Text style={styles.menuTitle}>
@@ -627,22 +528,6 @@ export default function MockExamScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-
-      {/* 广告解锁 */}
-      {gate && (
-        <AdGateModal
-          open={!!gate}
-          onClose={() => setGate(null)}
-          title={`解锁 ${activeUni?.short ?? ''} ${gate.year} 年 ${gate.subjectName}`}
-          desc={`看广告解锁 ${activeUni?.short ?? ''} ${gate.year} 年题目 · 24 小时内有效`}
-          onUnlock={() => {
-            if (activeEntry) unlockSchoolYear(activeEntry.universityId, gate.year);
-            startExam(gate.year, gate.subjectCode);
-            setGate(null);
-          }}
-          onUpgrade={() => router.push('/paywall' as any)}
-        />
-      )}
     </SafeAreaView>
   );
 }
