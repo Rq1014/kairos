@@ -413,7 +413,7 @@ Expected: 此时 service 层仍调用旧 `getSubject()`，故本步**预期编�
 
 - [ ] **Step 4: `PaperQueryServiceImpl` — 同样解析展示名**
 
-1. 注入 `SubjectMapper subjectMapper;` + 同款 `subjectNameMap()` helper（两 service 各自一份，YAGNI 不抽公用）。
+1. 注入 `SubjectMapper subjectMapper;` + 同款 `subjectNameMap()` helper。两 service 各需一份 code→nameJp map；实现者可各自建一份小 helper，或抽一个共享 `@Component`（如 `SubjectNameResolver`）供两者注入——取更简洁者，勿为此过度设计。
 2. `listByScope`：循环外 `var names = subjectNameMap();`，把 `r.setSubject(p.getSubject());` 改为
 ```java
         r.setSubjectCode(p.getSubjectCode());
