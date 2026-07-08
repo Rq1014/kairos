@@ -39,8 +39,7 @@ function isValidCache(v: unknown): v is NormalizedDict {
     typeof d.version === 'number' &&
     typeof d.gradsByUni === 'object' &&
     typeof d.majorsByKey === 'object' &&
-    typeof d.gradNameMap === 'object' &&
-    typeof d.subjectsByKey === 'object'
+    typeof d.gradNameMap === 'object'
   );
 }
 
@@ -60,7 +59,7 @@ export const useDictStore = create<DictState>((set, get) => ({
             gradsByUni: parsed.gradsByUni,
             majorsByKey: parsed.majorsByKey,
             gradNameMap: parsed.gradNameMap,
-            subjectsByKey: parsed.subjectsByKey,
+            subjectsByKey: parsed.subjectsByKey ?? {},
             version: parsed.version,
             source: 'cache',
           });

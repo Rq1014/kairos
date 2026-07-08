@@ -119,7 +119,7 @@ export default function TopicStudyScreen() {
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
   // 订阅字典版本：dictStore 联网刷新后触发本页重渲，下方 railEntries 用新字典重算。
-  useDictStore((s) => s.version);
+  const dictVersion = useDictStore((s) => s.version);
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const TARGET_LIMIT = schoolLimit(user);
   const setUser = useAuthStore((s) => s.setUser);
@@ -203,9 +203,11 @@ export default function TopicStudyScreen() {
     });
   }, [activeEntry, poolQuery.data]);
 
-  // subject 列表（即该专业的专业课）
+  // subject 列表（即该专业的专业课）；dictVersion 驱动字典联网刷新后重算
   const subjects = useMemo(() => {
     if (!activeEntry) return [];
+    // Reference dictVersion so the memo recomputes when dict hydrates from network
+    void dictVersion;
     const dictList = dictSubjects(activeEntry.universityId, activeEntry.gradSchool, activeEntry.majorId ?? '');
     const countByCode = new Map<string, number>();
     const nameByCode = new Map<string, string>();
@@ -220,7 +222,7 @@ export default function TopicStudyScreen() {
     return [...countByCode.entries()]
       .map(([code, count]) => ({ code, name: nameByCode.get(code) ?? code, count }))
       .sort((a, b) => b.count - a.count);
-  }, [activeEntry, pool]);
+  }, [activeEntry, pool, dictVersion]);
 
   function onSubjectPress(subjectCode: string) {
     if (!activeEntry) return;
