@@ -74,7 +74,7 @@ function listItemToExamPaper(raw: PaperListItemRaw, scope: PaperQueryParams): Ex
 export async function getPapers(params: PaperQueryParams = {}): Promise<ExamPaper[]> {
   if (!params.universityId || !params.graduateSchool) return [];
   const raw = await apiRequest<PaperListItemRaw[]>('/api/papers', {
-    query: { universityId: params.universityId, graduateSchool: params.graduateSchool },
+    query: { universityId: params.universityId, graduateSchool: params.graduateSchool, majorId: params.majorId ?? undefined },
   });
   return (raw ?? []).map((r) => listItemToExamPaper(r, params)).sort((a, b) => b.year - a.year);
 }
