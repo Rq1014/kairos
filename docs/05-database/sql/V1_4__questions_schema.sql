@@ -36,7 +36,7 @@ CREATE TABLE `exam_paper` (
     `updated_at`        DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_paper_code` (`code`),
-    UNIQUE KEY `uk_paper_scope` (`university_code`, `grad_school_code`, `major_code`, `year`, `subject_code`),
+    KEY `idx_paper_scope` (`university_code`, `grad_school_code`, `major_code`, `year`, `subject_code`),
     KEY `idx_paper_filter` (`university_code`, `grad_school_code`, `status`)
 ) ENGINE = InnoDB COMMENT = '试卷';
 
