@@ -27,7 +27,7 @@
 | A | 多卷模型 | **放开 `uk_paper_scope` 唯一约束**，允许同 (校+研究科+专业+年度+科目) 多份卷；唯一性仅剩 `uk_paper_code`（paper.code 全站唯一），多卷靠 code + sort_order 区分 |
 | B | 聚合数据源 | **试卷列表驱动一切** —— `getPapers` 返回该专业全部卷，前端内存做年度/科目/卷三级分组，不再扫题池 |
 | C | 拉取粒度 | **一次拉「校+研究科+专业」全部卷**（带 majorId）；exam-papers 页复用同一 react-query 缓存筛 year+subject，**不再单独请求** |
-| D | 学校元数据 | **A 方案**：本屏改走 `getUniversities()`（后端基础字段 + mergeWithMock 兜底 accent 等装饰字段），不再直接 `import KAKOMON_UNIVERSITIES` |
+| D | 学校元数据 | **A 方案**：本屏改走 `getUniversities()`（后端基础字段 + mergeWithMock 兜底 accent 等装饰字段），不再直接 `import KAKOMON_UNIVERSITIES`。**去 mock 到底**：本屏对 universities 亦**不做 mock 兜底**（区别于 university/study 两姐妹屏的 `?? KAKOMON_UNIVERSITIES`）——getUniversities 失败/空则左栏与加校搜索显示空/错误态。此处刻意比姐妹屏更严，贴合「全部从后端读」；实现与审查须知这是**有意分歧**，非不一致 bug。注意 `getUniversities` 内部 `mergeWithMock` 仍会用 mock 补 accent 等装饰字段（后端无 accent 列），这是 API 层既有行为、非本屏兜底。 |
 | E | 付费门禁 | **下沉到 exam-papers 卷卡**（点卷判 school×year，未解锁看广告）；主页面科目下拉纯导航、不判权限 |
 | F | offline 兜底 | **模考不做 mock 兜底**；getPapers 失败/空显示空态。理由：模考开考本就依赖后端整卷 getPaper，离线无意义，且贴合「全部从后端读」 |
 
@@ -83,7 +83,7 @@ Greenfield 无线上数据，V1_4 直接改建表语句，无 ALTER。
 | Mock 常量 | 本屏处理 | data.ts 是否删 |
 |-----------|---------|----------------|
 | `KAKOMON_QUESTIONS` | 本屏移除 import；聚合改 getPapers | **保留**（topic-study/search/questions/exam-session 等~8 屏兜底） |
-| `KAKOMON_UNIVERSITIES` | 本屏改走 getUniversities()，移除直接 import | **保留**（~10 屏共用 + mergeWithMock 装饰字段来源） |
+| `KAKOMON_UNIVERSITIES` | 本屏改走 getUniversities()（无 mock 兜底，见决策 D），移除直接 import | **保留**（~10 屏共用 + mergeWithMock 装饰字段来源） |
 | `DEMO_USER` | 保留（未登录 auth 兜底，与考试无关） | 保留 |
 
 "删除模考相关所有 mock" 落到本屏 = **移除三个 import、改走后端**；data.ts 常量因跨屏共用保留。物理删除 KAKOMON_QUESTIONS/PAPERS 属所有消费屏切后端后的独立收尾，不在本次。
