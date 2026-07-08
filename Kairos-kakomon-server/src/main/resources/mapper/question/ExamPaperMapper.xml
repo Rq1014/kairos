@@ -10,7 +10,7 @@
         <result column="grad_school_code" property="gradSchoolCode"/>
         <result column="major_code" property="majorCode"/>
         <result column="year" property="year"/>
-        <result column="subject" property="subject"/>
+        <result column="subject_code" property="subjectCode"/>
         <result column="title" property="title"/>
         <result column="duration_minutes" property="durationMinutes"/>
         <result column="total_score" property="totalScore"/>

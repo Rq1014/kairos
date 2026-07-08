@@ -6,6 +6,8 @@ import org.example.kairos.common.ResultCode;
 import org.example.kairos.common.exception.BizException;
 import org.example.kairos.entity.QuestionEntity;
 import org.example.kairos.entity.QuestionRelationEntity;
+import org.example.kairos.entity.SubjectEntity;
+import org.example.kairos.mapper.dict.SubjectMapper;
 import org.example.kairos.mapper.question.QuestionMapper;
 import org.example.kairos.mapper.question.QuestionRelationMapper;
 import org.example.kairos.model.response.question.ContentBlockDto;
@@ -19,7 +21,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 大问查询实现。JSON 列(content_blocks)通过 ObjectMapper 反序列化,失败降级为空列表。
@@ -29,19 +33,27 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
 
     @Autowired private QuestionMapper questionMapper;
     @Autowired private QuestionRelationMapper relationMapper;
+    @Autowired private SubjectMapper subjectMapper;
     @Autowired private ObjectMapper objectMapper;
 
+    private Map<String, String> subjectNameMap() {
+        Map<String, String> m = new HashMap<>();
+        for (SubjectEntity s : subjectMapper.findAll()) m.put(s.getCode(), s.getNameJp());
+        return m;
+    }
+
     @Override
-    public QuestionListResponse list(String universityId, String graduateSchool, Integer year,
-                                     String subject, String knowledgePoint, String keyword,
+    public QuestionListResponse list(String universityId, String graduateSchool, String majorId, Integer year,
+                                     String subjectCode, String knowledgePoint, String keyword,
                                      int page, int pageSize) {
         int p = Math.max(1, page);
         int ps = pageSize <= 0 ? 20 : Math.min(pageSize, 100);
         int offset = (p - 1) * ps;
-        long total = questionMapper.countByFilter(universityId, graduateSchool, year, subject, knowledgePoint, keyword);
-        List<QuestionEntity> rows = questionMapper.findByFilter(universityId, graduateSchool, year, subject, knowledgePoint, keyword, offset, ps);
+        long total = questionMapper.countByFilter(universityId, graduateSchool, majorId, year, subjectCode, knowledgePoint, keyword);
+        List<QuestionEntity> rows = questionMapper.findByFilter(universityId, graduateSchool, majorId, year, subjectCode, knowledgePoint, keyword, offset, ps);
+        var names = subjectNameMap();
         List<QuestionListItemResponse> items = new ArrayList<>();
-        for (QuestionEntity q : rows) items.add(toListItem(q));
+        for (QuestionEntity q : rows) items.add(toListItem(q, names));
         QuestionListResponse resp = new QuestionListResponse();
         resp.setItems(items);
         resp.setTotal(total);
@@ -55,13 +67,16 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
     public QuestionResponse getByCode(String code) {
         QuestionEntity q = questionMapper.findByCode(code);
         if (q == null) throw new BizException(ResultCode.QUESTION_NOT_FOUND);
+        var names = subjectNameMap();
         QuestionResponse r = new QuestionResponse();
         r.setId(q.getCode());
         r.setPaperId(q.getPaperCode());
         r.setUniversityId(q.getUniversityCode());
         r.setGraduateSchool(q.getGradSchoolCode());
+        r.setMajorId(q.getMajorCode());
         r.setYear(q.getYear());
-        r.setSubject(q.getSubject());
+        r.setSubjectCode(q.getSubjectCode());
+        r.setSubject(names.getOrDefault(q.getSubjectCode(), q.getSubjectCode()));
         r.setQuestionNo(q.getQuestionNo());
         r.setTitle(q.getTitle());
         r.setOrderIndex(q.getOrderIndex());
@@ -92,14 +107,16 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
         return out;
     }
 
-    private QuestionListItemResponse toListItem(QuestionEntity q) {
+    private QuestionListItemResponse toListItem(QuestionEntity q, Map<String, String> names) {
         QuestionListItemResponse r = new QuestionListItemResponse();
         r.setId(q.getCode());
         r.setPaperId(q.getPaperCode());
         r.setUniversityId(q.getUniversityCode());
         r.setGraduateSchool(q.getGradSchoolCode());
+        r.setMajorId(q.getMajorCode());
         r.setYear(q.getYear());
-        r.setSubject(q.getSubject());
+        r.setSubjectCode(q.getSubjectCode());
+        r.setSubject(names.getOrDefault(q.getSubjectCode(), q.getSubjectCode()));
         r.setQuestionNo(q.getQuestionNo());
         r.setTitle(q.getTitle());
         r.setOrderIndex(q.getOrderIndex());

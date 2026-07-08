@@ -9,8 +9,9 @@
         <result column="paper_code" property="paperCode"/>
         <result column="university_code" property="universityCode"/>
         <result column="grad_school_code" property="gradSchoolCode"/>
+        <result column="major_code" property="majorCode"/>
         <result column="year" property="year"/>
-        <result column="subject" property="subject"/>
+        <result column="subject_code" property="subjectCode"/>
         <result column="question_no" property="questionNo"/>
         <result column="title" property="title"/>
         <result column="order_index" property="orderIndex"/>
@@ -27,7 +28,7 @@
 
     <!-- 列表列集合: 不含 content_blocks / body_text 大字段 -->
     <sql id="listCols">
-        id, code, paper_code, university_code, grad_school_code, year, subject,
+        id, code, paper_code, university_code, grad_school_code, major_code, year, subject_code,
         question_no, title, order_index, difficulty_label, difficulty_level,
         crowd_difficulty_rate, crowd_votes, status, created_at, updated_at
     </sql>
@@ -47,8 +48,9 @@
             q.status = 1
             <if test="universityCode != null and universityCode != ''">AND q.university_code = #{universityCode}</if>
             <if test="gradSchoolCode != null and gradSchoolCode != ''">AND q.grad_school_code = #{gradSchoolCode}</if>
+            <if test="majorCode != null and majorCode != ''">AND q.major_code = #{majorCode}</if>
             <if test="year != null">AND q.year = #{year}</if>
-            <if test="subject != null and subject != ''">AND q.subject = #{subject}</if>
+            <if test="subjectCode != null and subjectCode != ''">AND q.subject_code = #{subjectCode}</if>
             <if test="keyword != null and keyword != ''">
                 AND (q.title LIKE CONCAT('%', #{keyword}, '%') OR q.body_text LIKE CONCAT('%', #{keyword}, '%'))
             </if>

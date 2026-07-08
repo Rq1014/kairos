@@ -13,6 +13,7 @@ public class PaperResponse {
     private String majorId;
     private Integer year;
     private String subject;
+    private String subjectCode;
     private String title;
     private Integer durationMinutes;
     private Integer totalScore;
@@ -42,6 +43,8 @@ public class PaperResponse {
     public void setYear(Integer year) { this.year = year; }
     public String getSubject() { return subject; }
     public void setSubject(String subject) { this.subject = subject; }
+    public String getSubjectCode() { return subjectCode; }
+    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public Integer getDurationMinutes() { return durationMinutes; }

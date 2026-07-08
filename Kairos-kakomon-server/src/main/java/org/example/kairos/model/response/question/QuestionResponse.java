@@ -8,8 +8,10 @@ public class QuestionResponse {
     private String paperId;
     private String universityId;
     private String graduateSchool;
+    private String majorId;
     private Integer year;
     private String subject;
+    private String subjectCode;
     private String questionNo;
     private String title;
     private Integer orderIndex;
@@ -27,10 +29,14 @@ public class QuestionResponse {
     public void setUniversityId(String universityId) { this.universityId = universityId; }
     public String getGraduateSchool() { return graduateSchool; }
     public void setGraduateSchool(String graduateSchool) { this.graduateSchool = graduateSchool; }
+    public String getMajorId() { return majorId; }
+    public void setMajorId(String majorId) { this.majorId = majorId; }
     public Integer getYear() { return year; }
     public void setYear(Integer year) { this.year = year; }
     public String getSubject() { return subject; }
     public void setSubject(String subject) { this.subject = subject; }
+    public String getSubjectCode() { return subjectCode; }
+    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
     public String getQuestionNo() { return questionNo; }
     public void setQuestionNo(String questionNo) { this.questionNo = questionNo; }
     public String getTitle() { return title; }
