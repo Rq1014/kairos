@@ -19,7 +19,7 @@ import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
 import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
-import { dictGradName, dictGrads, dictMajors, useDictStore } from '@/store/dictStore';
+import { dictGradName, dictGrads, dictMajors, dictSubjects, useDictStore } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
 import { schoolLimit } from '@/utils/accessPolicy';
@@ -197,7 +197,7 @@ export default function TopicStudyScreen() {
       if (q.universityId !== activeEntry.universityId) return false;
       if (q.graduateSchool !== activeEntry.gradSchool) return false;
       if (activeEntry.majorId) {
-        if (q.majorIds && q.majorIds.length > 0 && !q.majorIds.includes(activeEntry.majorId)) return false;
+        if (q.majorId && q.majorId !== activeEntry.majorId) return false;
       }
       return true;
     });
@@ -205,15 +205,27 @@ export default function TopicStudyScreen() {
 
   // subject 列表（即该专业的专业课）
   const subjects = useMemo(() => {
-    const map = new Map<string, number>();
-    pool.forEach((q) => map.set(q.subject, (map.get(q.subject) ?? 0) + 1));
-    return [...map.entries()].map(([subject, count]) => ({ subject, count })).sort((a, b) => b.count - a.count);
-  }, [pool]);
+    if (!activeEntry) return [];
+    const dictList = dictSubjects(activeEntry.universityId, activeEntry.gradSchool, activeEntry.majorId ?? '');
+    const countByCode = new Map<string, number>();
+    const nameByCode = new Map<string, string>();
+    pool.forEach((q) => {
+      countByCode.set(q.subjectCode, (countByCode.get(q.subjectCode) ?? 0) + 1);
+      if (!nameByCode.has(q.subjectCode)) nameByCode.set(q.subjectCode, q.subject);
+    });
+    if (dictList.length > 0) {
+      return dictList.map((s) => ({ code: s.code, name: s.nameJp, count: countByCode.get(s.code) ?? 0 }));
+    }
+    // 兜底：字典无数据时回退扫题池，展示名用题目自带的 subject（日文名）
+    return [...countByCode.entries()]
+      .map(([code, count]) => ({ code, name: nameByCode.get(code) ?? code, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [activeEntry, pool]);
 
-  function onSubjectPress(subject: string) {
+  function onSubjectPress(subjectCode: string) {
     if (!activeEntry) return;
     router.push(
-      `/topic-questions?universityId=${activeEntry.universityId}&gradSchool=${encodeURIComponent(activeEntry.gradSchool)}&majorId=${activeEntry.majorId ?? ''}&subject=${encodeURIComponent(subject)}` as any,
+      `/topic-questions?universityId=${activeEntry.universityId}&gradSchool=${encodeURIComponent(activeEntry.gradSchool)}&majorId=${activeEntry.majorId ?? ''}&subjectCode=${encodeURIComponent(subjectCode)}` as any,
     );
   }
 
@@ -383,10 +395,10 @@ export default function TopicStudyScreen() {
                 </View>
               ) : (
                 subjects.map((s, i) => (
-                  <Pressable key={s.subject} style={styles.subjectCard} onPress={() => onSubjectPress(s.subject)}>
+                  <Pressable key={s.code} style={styles.subjectCard} onPress={() => onSubjectPress(s.code)}>
                     <View style={[styles.subjectAccent, { backgroundColor: accentColors[i % 5] }]} />
                     <View style={styles.subjectMain}>
-                      <Text style={styles.subjectName}>{s.subject}</Text>
+                      <Text style={styles.subjectName}>{s.name}</Text>
                       <Text style={styles.subjectCount}>{s.count} 道题</Text>
                     </View>
                     <Icon name="chevronRight" size={16} color={Colors.textMuted} />

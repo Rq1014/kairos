@@ -60,22 +60,23 @@ export default function TopicQuestionsScreen() {
   const Colors = useColors();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
-  const params = useLocalSearchParams<{ universityId: string; gradSchool: string; majorId: string; subject: string }>();
+  const params = useLocalSearchParams<{ universityId: string; gradSchool: string; majorId: string; subjectCode: string }>();
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
   useAdStore((s) => s.unlockedSchoolYears);
 
-  const { universityId, gradSchool, majorId, subject } = params;
+  const { universityId, gradSchool, majorId, subjectCode } = params;
   const uni = KAKOMON_UNIVERSITIES.find((u) => u.id === universityId);
 
   const questionsQuery = useQuery({
-    queryKey: ['questions', universityId, gradSchool, subject],
+    queryKey: ['questions', universityId, gradSchool, subjectCode],
     queryFn: () => getQuestions({
       universityIds: universityId ? [universityId] : undefined,
-      subjects: subject ? [subject] : undefined,
+      subjects: subjectCode ? [subjectCode] : undefined,
+      majorId: majorId || undefined,
       pageSize: 100,
     }),
-    enabled: !!universityId && !!subject,
+    enabled: !!universityId && !!subjectCode,
   });
 
   // getQuestions 内部已带 mock 回退;这里再按 majorId 本地细筛 + 排序,兼容后端未按专业过滤。
@@ -83,10 +84,10 @@ export default function TopicQuestionsScreen() {
     const items = questionsQuery.data?.items ?? [];
     return items
       .filter((q) => (gradSchool ? q.graduateSchool === gradSchool : true))
-      .filter((q) => (majorId && q.majorIds && q.majorIds.length > 0 ? q.majorIds.includes(majorId) : true))
-      .filter((q) => q.subject === subject)
+      .filter((q) => (majorId && q.majorId ? q.majorId === majorId : true))
+      .filter((q) => q.subjectCode === subjectCode)
       .sort((a, b) => b.year - a.year);
-  }, [questionsQuery.data, gradSchool, majorId, subject]);
+  }, [questionsQuery.data, gradSchool, majorId, subjectCode]);
 
   const [gate, setGate] = useState<KakomonQuestion | null>(null);
 
@@ -137,7 +138,7 @@ export default function TopicQuestionsScreen() {
           <Icon name="chevronLeft" size={22} color={Colors.textPrimary} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{subject}</Text>
+          <Text style={styles.headerTitle}>{questionsQuery.data?.items?.[0]?.subject ?? subjectCode}</Text>
           <Text style={styles.headerSub}>{uni?.short ?? universityId} · {questions.length} 道题</Text>
         </View>
       </View>

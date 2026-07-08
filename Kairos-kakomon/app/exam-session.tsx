@@ -99,6 +99,7 @@ export default function ExamSessionScreen() {
         graduateSchool: d.graduateSchool,
         year: d.year,
         subject: d.subject,
+        subjectCode: d.subjectCode,
         questionNo: d.questionNo,
         title: d.title,
         knowledgePoints: d.knowledgePoints ?? [],

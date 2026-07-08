@@ -40,7 +40,7 @@ interface RailEntry {
 
 interface YearGroup {
   year: number;
-  subjects: string[];
+  subjects: { code: string; name: string }[];
   questions: KakomonQuestion[];
 }
 
@@ -221,7 +221,7 @@ export default function MockExamScreen() {
       if (q.universityId !== activeEntry.universityId) return false;
       if (q.graduateSchool !== activeEntry.gradSchool) return false;
       if (activeEntry.majorId) {
-        if (q.majorIds && q.majorIds.length > 0 && !q.majorIds.includes(activeEntry.majorId)) return false;
+        if (q.majorId && q.majorId !== activeEntry.majorId) return false;
       }
       return true;
     });
@@ -236,11 +236,15 @@ export default function MockExamScreen() {
     });
     return [...map.entries()]
       .sort(([a], [b]) => b - a)
-      .map(([year, qs]) => ({
-        year,
-        subjects: Array.from(new Set(qs.map((q) => q.subject))),
-        questions: qs,
-      }));
+      .map(([year, qs]) => {
+        const seen = new Map<string, string>();
+        qs.forEach((q) => { if (!seen.has(q.subjectCode)) seen.set(q.subjectCode, q.subject); });
+        return {
+          year,
+          subjects: [...seen.entries()].map(([code, name]) => ({ code, name })),
+          questions: qs,
+        };
+      });
   }, [pool]);
 
   const papersQuery = useQuery({
@@ -250,41 +254,42 @@ export default function MockExamScreen() {
   });
   const papersForEntry: ExamPaper[] = papersQuery.data ?? [];
 
-  const findPaper = (year: number, subject: string) =>
-    papersForEntry.find((p) => p.year === year && p.subject === subject) ?? null;
+  const findPaper = (year: number, subjectCode: string) =>
+    papersForEntry.find((p) => p.year === year && p.subjectCode === subjectCode) ?? null;
 
-  function getSelectedSubject(year: number, subjects: string[]): string {
-    return yearSubjectMap[year] ?? subjects[0] ?? '';
+  function getSelectedSubject(year: number, subjects: { code: string; name: string }[]): string {
+    return yearSubjectMap[year] ?? subjects[0]?.code ?? '';
   }
 
-  function selectYearSubject(year: number, subject: string) {
-    setYearSubjectMap((m) => ({ ...m, [year]: subject }));
+  function selectYearSubject(year: number, subjectCode: string) {
+    setYearSubjectMap((m) => ({ ...m, [year]: subjectCode }));
     setYearDropdownOpen(null);
   }
 
-  function startExam(year: number, subject: string) {
+  function startExam(year: number, subjectCode: string) {
     if (!activeEntry) return;
-    const qs = pool.filter((q) => q.year === year && q.subject === subject);
+    const qs = pool.filter((q) => q.year === year && q.subjectCode === subjectCode);
     if (qs.length === 0) return;
     const ids = qs.map((q) => q.id).join(',');
-    const paper = findPaper(year, subject);
+    const subjectName = qs[0].subject;
+    const paper = findPaper(year, subjectCode);
     const paperParam = paper ? `&paperCode=${encodeURIComponent(paper.id)}` : '';
     const extra = paper
       ? `${paper.durationMinutes ? `&durationMinutes=${paper.durationMinutes}` : ''}${paper.selectRule ? `&selectTotal=${paper.selectRule.total}&selectChoose=${paper.selectRule.choose}` : ''}`
       : '';
-    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subject}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}${extra}${paperParam}` as any);
+    router.push(`/exam-session?title=${encodeURIComponent(`${activeUni?.short ?? ''} ${year} ${subjectName}`)}&universityId=${activeEntry.universityId}&mode=mock&ids=${ids}${extra}${paperParam}` as any);
   }
 
   // 广告门
-  const [gate, setGate] = useState<{ year: number; subject: string } | null>(null);
+  const [gate, setGate] = useState<{ year: number; subjectCode: string; subjectName: string } | null>(null);
 
-  function handleExamPress(year: number, subject: string) {
+  function handleExamPress(year: number, subjectCode: string, subjectName: string) {
     if (!activeEntry) return;
     const access = canAccessQuestion(user, { universityId: activeEntry.universityId, gradSchool: activeEntry.gradSchool, year });
     if (access.allowed) {
-      startExam(year, subject);
+      startExam(year, subjectCode);
     } else {
-      setGate({ year, subject });
+      setGate({ year, subjectCode, subjectName });
     }
   }
 
@@ -446,9 +451,10 @@ export default function MockExamScreen() {
                 </View>
               ) : (
                 yearGroups.map((yg) => {
-                  const selected = getSelectedSubject(yg.year, yg.subjects);
+                  const selectedCode = getSelectedSubject(yg.year, yg.subjects);
+                  const selectedName = yg.subjects.find((s) => s.code === selectedCode)?.name ?? selectedCode;
                   const isOpen = yearDropdownOpen === yg.year;
-                  const subjectQs = yg.questions.filter((q) => q.subject === selected);
+                  const subjectQs = yg.questions.filter((q) => q.subjectCode === selectedCode);
                   const access = canAccessQuestion(user, { universityId: activeEntry.universityId, gradSchool: activeEntry.gradSchool, year: yg.year });
                   const unlocked = access.allowed;
                   return (
@@ -460,30 +466,30 @@ export default function MockExamScreen() {
 
                       {/* 科目下拉 */}
                       <Pressable style={styles.subjectDropdown} onPress={() => setYearDropdownOpen(isOpen ? null : yg.year)}>
-                        <Text style={styles.subjectDropdownText}>{selected || '选择科目'}</Text>
+                        <Text style={styles.subjectDropdownText}>{selectedName || '选择科目'}</Text>
                         <Icon name={isOpen ? 'chevronUp' : 'chevronDown'} size={13} color={Colors.textPrimary} />
                       </Pressable>
 
                       {isOpen && (
                         <View style={styles.subjectMenu}>
                           {yg.subjects.map((subj, i) => {
-                            const isActive = subj === selected;
+                            const isActive = subj.code === selectedCode;
                             return (
                               <Pressable
-                                key={subj}
+                                key={subj.code}
                                 style={[styles.subjectMenuItem, isActive && styles.subjectMenuItemActive, i === yg.subjects.length - 1 && styles.subjectMenuItemLast]}
-                                onPress={() => selectYearSubject(yg.year, subj)}
+                                onPress={() => selectYearSubject(yg.year, subj.code)}
                               >
-                                <Text style={[styles.subjectMenuItemText, isActive && styles.subjectMenuItemTextActive]}>{subj}</Text>
+                                <Text style={[styles.subjectMenuItemText, isActive && styles.subjectMenuItemTextActive]}>{subj.name}</Text>
                               </Pressable>
                             );
                           })}
                         </View>
                       )}
 
-                      <Text style={styles.questionCount}>{selected}：{subjectQs.length} 道题</Text>
+                      <Text style={styles.questionCount}>{selectedName}：{subjectQs.length} 道题</Text>
                       {(() => {
-                        const paper = findPaper(yg.year, selected);
+                        const paper = findPaper(yg.year, selectedCode);
                         if (!paper) return null;
                         return (
                           <Text style={styles.paperMeta}>
@@ -507,12 +513,12 @@ export default function MockExamScreen() {
                       )}
 
                       {unlocked ? (
-                        <Pressable style={styles.startBtn} onPress={() => startExam(yg.year, selected)}>
+                        <Pressable style={styles.startBtn} onPress={() => startExam(yg.year, selectedCode)}>
                           <Icon name="clock" size={14} color="#fff" />
                           <Text style={styles.startBtnText}>开始模考（{subjectQs.length} 题）</Text>
                         </Pressable>
                       ) : (
-                        <Pressable style={styles.lockBtn} onPress={() => handleExamPress(yg.year, selected)}>
+                        <Pressable style={styles.lockBtn} onPress={() => handleExamPress(yg.year, selectedCode, selectedName)}>
                           <Icon name="eye" size={14} color="#fff" />
                           <Text style={styles.lockBtnText}>看广告解锁（24h）</Text>
                         </Pressable>
@@ -627,11 +633,11 @@ export default function MockExamScreen() {
         <AdGateModal
           open={!!gate}
           onClose={() => setGate(null)}
-          title={`解锁 ${activeUni?.short ?? ''} ${gate.year} 年 ${gate.subject}`}
+          title={`解锁 ${activeUni?.short ?? ''} ${gate.year} 年 ${gate.subjectName}`}
           desc={`看广告解锁 ${activeUni?.short ?? ''} ${gate.year} 年题目 · 24 小时内有效`}
           onUnlock={() => {
             if (activeEntry) unlockSchoolYear(activeEntry.universityId, gate.year);
-            startExam(gate.year, gate.subject);
+            startExam(gate.year, gate.subjectCode);
             setGate(null);
           }}
           onUpgrade={() => router.push('/paywall' as any)}
