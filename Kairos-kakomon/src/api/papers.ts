@@ -12,6 +12,7 @@ interface PaperListItemRaw {
   id: string;
   year: number;
   subject: string;
+  subjectCode: string;
   title: string;
   durationMinutes?: number;
   selectRule?: { total: number; choose: number };
@@ -27,6 +28,7 @@ export interface PaperQuestionRaw {
   graduateSchool: string;
   year: number;
   subject: string;
+  subjectCode: string;
   difficultyLabel?: string;
   difficultyLevel?: string;
   knowledgePoints?: string[];
@@ -39,6 +41,7 @@ interface PaperDetailRaw {
   majorId?: string | null;
   year: number;
   subject: string;
+  subjectCode: string;
   title: string;
   durationMinutes?: number;
   totalScore?: number | null;
@@ -58,6 +61,7 @@ function listItemToExamPaper(raw: PaperListItemRaw, scope: PaperQueryParams): Ex
     majorId: scope.majorId ?? null,
     year: raw.year,
     subject: raw.subject,
+    subjectCode: raw.subjectCode,
     title: raw.title,
     durationMinutes: raw.durationMinutes,
     totalScore: null,
@@ -84,6 +88,7 @@ export async function getPaper(id: string): Promise<PaperDetail> {
     majorId: raw.majorId ?? null,
     year: raw.year,
     subject: raw.subject,
+    subjectCode: raw.subjectCode,
     title: raw.title,
     durationMinutes: raw.durationMinutes,
     totalScore: raw.totalScore ?? null,

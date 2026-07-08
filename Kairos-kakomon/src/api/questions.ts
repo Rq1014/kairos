@@ -18,6 +18,8 @@ interface QuestionListItemRaw {
   graduateSchool: string;
   year: number;
   subject: string;
+  subjectCode: string;
+  majorId?: string;
   questionNo: string;
   title: string;
   orderIndex?: number;
@@ -45,8 +47,10 @@ function listItemToQuestion(raw: QuestionListItemRaw): KakomonQuestion {
     id: raw.id,
     universityId: raw.universityId,
     graduateSchool: raw.graduateSchool,
+    majorId: raw.majorId,
     year: raw.year,
     subject: raw.subject,
+    subjectCode: raw.subjectCode,
     questionNo: raw.questionNo,
     title: raw.title,
     orderIndex: raw.orderIndex,
@@ -87,6 +91,7 @@ export interface QuestionListParams {
   page?: number;
   pageSize?: number;
   universityIds?: string[];
+  majorId?: string;
   subjects?: string[];
   knowledgePoints?: string[];
   years?: number[];
@@ -110,14 +115,14 @@ export async function getQuestions(
   params?: QuestionListParams,
 ): Promise<PaginatedResponse<KakomonQuestion>> {
   const uni = params?.universityIds?.[0];
-  const subject = params?.subjects?.[0];
+  const subjectCode = params?.subjects?.[0];
   const kp = params?.knowledgePoints?.[0];
   const year = params?.years?.[0];
   const raw = await apiRequest<{
     items: QuestionListItemRaw[]; total: number; page: number; pageSize: number; hasMore: boolean;
   }>('/api/questions', {
     query: {
-      universityId: uni, subject, knowledgePoint: kp, year,
+      universityId: uni, majorId: params?.majorId, subjectCode, knowledgePoint: kp, year,
       keyword: params?.keyword,
       page: params?.page ?? 1, pageSize: params?.pageSize ?? 20,
     },
