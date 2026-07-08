@@ -87,7 +87,7 @@ public class UniversityTreeResponse {
         /** 描述 */
         private String desc;
         /** 考试科目 */
-        private List<String> subjects;
+        private List<SubjectNode> subjects;
 
         public String getId() { return id; }
         public void setId(String id) { this.id = id; }
@@ -97,7 +97,17 @@ public class UniversityTreeResponse {
         public void setShort(String shortName) { this.shortName = shortName; }
         public String getDesc() { return desc; }
         public void setDesc(String desc) { this.desc = desc; }
-        public List<String> getSubjects() { return subjects; }
-        public void setSubjects(List<String> subjects) { this.subjects = subjects; }
+        public List<SubjectNode> getSubjects() { return subjects; }
+        public void setSubjects(List<SubjectNode> subjects) { this.subjects = subjects; }
+    }
+
+    /** 科目树节点 */
+    public static class SubjectNode {
+        private String code;
+        private String nameJp;
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+        public String getNameJp() { return nameJp; }
+        public void setNameJp(String nameJp) { this.nameJp = nameJp; }
     }
 }

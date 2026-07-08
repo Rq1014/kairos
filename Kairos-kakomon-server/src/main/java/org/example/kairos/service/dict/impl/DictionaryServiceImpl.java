@@ -1,15 +1,17 @@
 package org.example.kairos.service.dict.impl;
 
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
 import org.example.kairos.common.ResultCode;
 import org.example.kairos.common.constant.CacheKeys;
 import org.example.kairos.common.exception.BizException;
 import org.example.kairos.entity.GradSchoolEntity;
 import org.example.kairos.entity.MajorEntity;
+import org.example.kairos.entity.MajorSubjectEntity;
+import org.example.kairos.entity.SubjectEntity;
 import org.example.kairos.entity.UniversityEntity;
 import org.example.kairos.mapper.dict.GradSchoolMapper;
 import org.example.kairos.mapper.dict.MajorMapper;
+import org.example.kairos.mapper.dict.MajorSubjectMapper;
+import org.example.kairos.mapper.dict.SubjectMapper;
 import org.example.kairos.mapper.dict.UniversityMapper;
 import org.example.kairos.model.response.dict.GradSchoolResponse;
 import org.example.kairos.model.response.dict.MajorResponse;
@@ -33,7 +35,7 @@ import java.util.List;
  * <ul>
  *   <li>大学/研究科/专业三级结构,通过 universityId/gradSchoolId 关联</li>
  *   <li>对外暴露 code(而非自增 ID),便于版本演进</li>
- *   <li>major.subjects 字段为 JSON 数组字符串,通过 ObjectMapper 序列化</li>
+ *   <li>major.subjects 字段已废弃,subjects 数据从 major_subject 关联表获取</li>
  *   <li>版本号通过 Redis 单独存储,字典数据更新时递增,客户端据此重拉</li>
  * </ul>
  */
@@ -43,8 +45,9 @@ public class DictionaryServiceImpl implements DictionaryService {
     @Autowired private UniversityMapper universityMapper;
     @Autowired private GradSchoolMapper gradSchoolMapper;
     @Autowired private MajorMapper majorMapper;
+    @Autowired private SubjectMapper subjectMapper;
+    @Autowired private MajorSubjectMapper majorSubjectMapper;
     @Autowired private StringRedisTemplate redis;
-    @Autowired private ObjectMapper objectMapper;
 
     @Override
     public int getVersion() {
@@ -130,6 +133,18 @@ public class DictionaryServiceImpl implements DictionaryService {
         List<GradSchoolEntity> gs = gradSchoolMapper.findAll();
         List<MajorEntity> ms = majorMapper.findAll();
 
+        java.util.Map<String, String> subjectNameByCode = new java.util.HashMap<>();
+        for (SubjectEntity s : subjectMapper.findAll()) subjectNameByCode.put(s.getCode(), s.getNameJp());
+
+        java.util.Map<String, List<UniversityTreeResponse.SubjectNode>> subjectsByMajorKey = new java.util.HashMap<>();
+        for (MajorSubjectEntity msub : majorSubjectMapper.findAll()) {
+            String key = msub.getUniversityCode() + "::" + msub.getGradSchoolCode() + "::" + msub.getMajorCode();
+            UniversityTreeResponse.SubjectNode sn = new UniversityTreeResponse.SubjectNode();
+            sn.setCode(msub.getSubjectCode());
+            sn.setNameJp(subjectNameByCode.getOrDefault(msub.getSubjectCode(), msub.getSubjectCode()));
+            subjectsByMajorKey.computeIfAbsent(key, k -> new ArrayList<>()).add(sn);
+        }
+
         java.util.Map<Long, List<GradSchoolEntity>> gradByUni = new java.util.HashMap<>();
         for (GradSchoolEntity g : gs) {
             gradByUni.computeIfAbsent(g.getUniversityId(), k -> new ArrayList<>()).add(g);
@@ -163,7 +178,8 @@ public class DictionaryServiceImpl implements DictionaryService {
                     mn.setLabel(m.getLabel());
                     mn.setShort(m.getShortName());
                     mn.setDesc(m.getDescription());
-                    mn.setSubjects(parseSubjects(m.getSubjects()));
+                    String mkey = u.getCode() + "::" + g.getCode() + "::" + m.getCode();
+                    mn.setSubjects(subjectsByMajorKey.getOrDefault(mkey, Collections.emptyList()));
                     majorNodes.add(mn);
                 }
                 gn.setMajors(majorNodes);
@@ -205,16 +221,7 @@ public class DictionaryServiceImpl implements DictionaryService {
         r.setLabel(m.getLabel());
         r.setShort(m.getShortName());
         r.setDesc(m.getDescription());
-        r.setSubjects(parseSubjects(m.getSubjects()));
+        r.setSubjects(Collections.emptyList());
         return r;
-    }
-
-    private List<String> parseSubjects(String json) {
-        if (json == null || json.isBlank()) return Collections.emptyList();
-        try {
-            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
-        } catch (Exception e) {
-            return Collections.emptyList();
-        }
     }
 }
