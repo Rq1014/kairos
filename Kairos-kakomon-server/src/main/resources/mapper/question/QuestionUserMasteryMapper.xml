@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.QuestionUserMasteryMapper">
+
+    <insert id="upsert">
+        INSERT INTO question_user_mastery (user_id, question_code, mastery)
+        VALUES (#{userId}, #{questionCode}, #{mastery})
+        ON DUPLICATE KEY UPDATE mastery = VALUES(mastery)
+    </insert>
+
+    <select id="findUserMastery" resultType="string">
+        SELECT mastery FROM question_user_mastery
+        WHERE user_id = #{userId} AND question_code = #{questionCode}
+    </select>
+</mapper>
