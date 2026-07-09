@@ -74,7 +74,7 @@
 **前端** `app/questions/[id].tsx`
 
 - section ③.5「同专题练习」改用 react-query 调 `getRelatedQuestions(id)`（已存在 API 函数），替掉 `recommendRelated()` 的 `useMemo`。
-- 删 `src/utils/recommend.ts`（唯一消费者移除）。
+- **不删 `src/utils/recommend.ts`**：`app/wrong-book.tsx:194` 仍用它做错题「reinforce」推荐。只从 `app/questions/[id].tsx` 移除 import 与调用。
 - 卡片渲染沿用现有样式（大学·年份 + 标题 + 知识点标签），数据换后端返回的 `RelatedQuestion[]`；知识点标签读新字段 `knowledgePoints`。空列表不渲染该块。ad-gate 判定沿用 `canAccessQuestion`（同专题题可能超出免费范围）。
 - `src/api/questions.ts`：`relatedToFront` 修正——不再硬编码空串/0，改为读后端真字段（含 `knowledgePoints`）；移除 `level/matchType/reason/confidence` 相关映射；`RelatedQuestionsResponse` 里 `level===3`/`level3Total`/`isPro` 等相似题专用逻辑删除。
 - `src/types/question.ts`：`RelatedQuestion` 类型改为 `{ id, title, universityId, universityName, year, subject, subjectCode, questionNo, knowledgePoints }`（去掉 `level/reason/confidence`）。
@@ -180,7 +180,7 @@ CREATE TABLE `question_user_mastery` (
 
 **后端改动**：`QuestionController`（`@PublicApi` 下沉、加 2 写方法、detail 加 `@CurrentUser`）；`QuestionMapper`(+XML)（`findSameTopic`、`updateCrowd`）；`QuestionQueryServiceImpl`（`getRelated` 改 `findSameTopic`、detail 补用户维度字段）；`model/response/question/QuestionResponse`、`RelatedQuestionResponse`（字段增删）；`ResultCode`（+`10603`、`10604`）。
 
-**前端改动**：`app/questions/[id].tsx`（删 2 块 + 接 3 真接口 + 双写掌握）；删 `src/utils/recommend.ts`；`src/api/questions.ts`（`relatedToFront` 修 bug、`detailToQuestion` 补字段、`listItemToQuestion` crowd 默认值）；`src/types/question.ts`（`RelatedQuestion` 精简、`QuestionResponse` 侧字段确认）。
+**前端改动**：`app/questions/[id].tsx`（删 2 块 + 接 3 真接口 + 双写掌握）；`app/questions/[id].tsx` 移除 `recommendRelated` 引用（`recommend.ts` 保留，`wrong-book.tsx` 仍用）；`src/api/questions.ts`（`relatedToFront` 修 bug、`detailToQuestion` 补字段、`listItemToQuestion` crowd 默认值）；`src/types/question.ts`（`RelatedQuestion` 精简、`QuestionResponse` 侧字段确认）。
 
 **文档**：`docs/02-architecture/API-contract.md` 更新上述 4 端点。
 
