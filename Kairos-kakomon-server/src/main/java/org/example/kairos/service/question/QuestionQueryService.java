@@ -12,7 +12,7 @@ public interface QuestionQueryService {
                               String subjectCode, String knowledgePoint, String keyword,
                               int page, int pageSize);
 
-    QuestionResponse getByCode(String code);
+    QuestionResponse getByCode(String code, Long userId);
 
     List<RelatedQuestionResponse> getRelated(String code);
 }

@@ -1,6 +1,8 @@
 package org.example.kairos.model.response.question;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /** 大问详情(含结构化题干)。字段名对齐前端 KakomonQuestion。 */
 public class QuestionResponse {
@@ -20,6 +22,10 @@ public class QuestionResponse {
     private String difficultyLabel;
     private String difficultyLevel;
     private List<String> knowledgePoints;
+    private BigDecimal crowdDifficultyRate;
+    private Map<String, Integer> crowdVotes;
+    private String myVote;
+    private String masteryStatus;
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
@@ -53,4 +59,12 @@ public class QuestionResponse {
     public void setDifficultyLevel(String difficultyLevel) { this.difficultyLevel = difficultyLevel; }
     public List<String> getKnowledgePoints() { return knowledgePoints; }
     public void setKnowledgePoints(List<String> knowledgePoints) { this.knowledgePoints = knowledgePoints; }
+    public BigDecimal getCrowdDifficultyRate() { return crowdDifficultyRate; }
+    public void setCrowdDifficultyRate(BigDecimal crowdDifficultyRate) { this.crowdDifficultyRate = crowdDifficultyRate; }
+    public Map<String, Integer> getCrowdVotes() { return crowdVotes; }
+    public void setCrowdVotes(Map<String, Integer> crowdVotes) { this.crowdVotes = crowdVotes; }
+    public String getMyVote() { return myVote; }
+    public void setMyVote(String myVote) { this.myVote = myVote; }
+    public String getMasteryStatus() { return masteryStatus; }
+    public void setMasteryStatus(String masteryStatus) { this.masteryStatus = masteryStatus; }
 }
