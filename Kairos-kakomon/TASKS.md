@@ -1239,3 +1239,34 @@
 - [x] 门禁 type-check EXIT 0 + lint 0 error（19 既有 warning 基线）+ 全项目 grep 走查（消费屏幕无静态字典直读残留；universities.ts 作为 API 层保留 mock 兜底属合理）
   ✅ 完成于 2026-07-07，真机端到端（选校/专题/模考/详情显示名 + 断网 seed 兜底 + 后端新增研究科 version 递增重启拉取）待联调环境人工验证（本环境无后端/DB 凭据 + 无模拟器）
   ✅ 补充 2026-07-07：前述 "19 warning 基线" 修正——其中 4 条（topic-study / mock-exam 的 memo+useCallback 死导入）实为本次 useMemo→普通计算重构遗留、非既有基线，已清理；门禁现为 lint 15 warning / 0 error
+
+## 题目详情页改造：删论坛/举一反三 + 同专题真数据 + 难度投票/掌握上后端（2026-07-09）
+
+> spec：docs/superpowers/specs/2026-07-09-question-detail-crowd-mastery-design.md
+> plan：docs/superpowers/plans/2026-07-09-question-detail-crowd-mastery.md
+> 执行：subagent-driven-development（后端/前端两大集成单元各 implementer + reviewer 双门；机械单文件任务 controller 直做 + ./mvnw compile 门禁）
+
+- [x] V1_9 迁移：question_difficulty_vote + question_user_mastery（各 uk_user_question 一人一题唯一）
+  ✅ 完成于 2026-07-09（3217ec8；本环境无 MySQL，建库执行 DEFERRED 联调）
+- [x] ResultCode +10603 INVALID_DIFFICULTY_VOTE / +10604 INVALID_MASTERY_STATUS
+  ✅ 完成于 2026-07-09（e607c06）
+- [x] 后端投票/掌握 entity+mapper（upsert / countGroupByVote / findUserVote / findUserMastery）+ QuestionMapper updateCrowd/findCrowdVotes/findSameTopic
+  ✅ 完成于 2026-07-09（e607c06 + c64091d；./mvnw compile SUCCESS；MyBatis XML 运行期绑定 DEFERRED 联调）
+- [x] QuestionMutationService：投票 upsert→重算三桶→回写 crowd_difficulty_rate(=hard/total, total=0→null, BigDecimal scale3 HALF_UP)/crowd_votes；掌握 upsert
+  ✅ 完成于 2026-07-09（096257b）
+- [x] getRelated 改查 findSameTopic（严格同 学校+研究科+专业+科目、知识点重合排序）并填全字段；detail 补 crowdDifficultyRate/crowdVotes/myVote/masteryStatus
+  ✅ 完成于 2026-07-09（096257b）
+- [x] QuestionController：类级 @PublicApi 下沉方法级（list/related 保留公开，detail 强制登录 +@CurrentUser）；新增 POST difficulty-vote / PUT mastery（强制登录）
+  ✅ 完成于 2026-07-09（096257b；sonnet reviewer Spec✅+Quality Approved，契约 byte-for-byte 对齐）
+- [x] 前端 API 层对齐：RelatedQuestion 精简 9 字段、getRelatedQuestions 返数组、voteQuestionDifficulty 收窄 CrowdVoteValue、detailToQuestion 补 crowdVotes/myVote/masteryStatus、listItemToQuestion crowd 读真值
+  ✅ 完成于 2026-07-09（7e4cdb5）
+- [x] 详情页 app/questions/[id].tsx：删论坛(2处入口+sticky bar)、删举一反三整块(+relatedGate+死样式)；同专题练习改 react-query 调后端；掌握对 attemptStore+后端双写；投票调后端并 setQueryData 刷新
+  ✅ 完成于 2026-07-09（7e4cdb5 + Minor 修 6093525；type-check 0 err / lint 0 err（15 既有 warning 基线）；recommend.ts 保留（wrong-book 仍用））
+- [x] 文档：API-contract §2.14 补字段+需登录 / §2.15 改同专题 / 新增 §2.16 投票 §2.17 掌握；§1.7 示例去举一反三
+  ✅ 完成于 2026-07-09（08ad88f + ec92f72）
+- [ ] 联调环境人工验证（本环境无 MySQL/后端/模拟器，全部运行期项 DEFERRED）：
+  - [ ] 初始化 DB 到 V1_9；GET /questions/{code} 未登录返回 401、登录后带 myVote/masteryStatus
+  - [ ] 投票落库；改投时旧桶-1/新桶+1；crowd_difficulty_rate = hard/total、无票为 null
+  - [ ] 掌握 upsert；换设备/清 AsyncStorage 后仍从后端读回
+  - [ ] 同专题只返回同 学校+研究科+专业+科目 其它题、知识点重合排序、卡片大学/年份/科目非空
+  - [ ] 详情页三级下钻：专题学习→题列表→详情，投票/掌握/同专题三块交互跑通
