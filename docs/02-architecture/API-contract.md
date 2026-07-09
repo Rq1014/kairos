@@ -422,6 +422,8 @@ Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?
 
 ### 2.14 GET /questions/{code}（大问详情 · 含 contentBlocks）
 
+> **需登录**（`LoginRequiredInterceptor` 强制）。响应含**当前用户**的 `myVote` / `masteryStatus`。
+
 ```json
 {
   "code": 0, "message": "ok",
@@ -431,22 +433,66 @@ Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?
     "year": 2024, "subject": "数学", "questionNo": "第3问", "title": "…",
     "contentBlocks": [ { "type": "text", "content": "…" },
                        { "type": "math", "latex": "A v_1 = 2 v_1" } ],
-    "knowledgePoints": ["线性代数","固有值"]
+    "knowledgePoints": ["线性代数","固有值"],
+    "crowdDifficultyRate": 0.72, "crowdVotes": { "easy": 12, "medium": 38, "hard": 84 },
+    "myVote": "hard", "masteryStatus": "unclear"
   }
 }
 ```
 
-### 2.15 GET /questions/{code}/related（举一反三）
+- `crowdDifficultyRate`：众包难度 = `hard 票 / 总票`（0~1），无票时为 `null`。
+- `crowdVotes`：三桶票数 `{easy,medium,hard}`。
+- `myVote`：当前用户的难度票（`easy|medium|hard`），未投为 `null`。
+- `masteryStatus`：当前用户的掌握自评（`mastered|unclear|wrong`），未评为 `null`。
+
+### 2.15 GET /questions/{code}/related（同专题联系）
+
+严格同 **学校 + 研究科 + 专业 + 科目**的其它大问，按共享知识点数降序、年份降序，最多 6 条。公开（`@PublicApi`）。
 
 ```json
 {
   "code": 0, "message": "ok",
-  "data": [ { "id": "q-todai-2024-math-2", "title": "…", "level": 2,
-              "matchType": "same_point", "reason": "同为固有值考点" } ]
+  "data": [ { "id": "q-todai-2023-math-1", "title": "…",
+              "universityId": "todai", "universityName": "东京大学",
+              "year": 2023, "subject": "数学", "subjectCode": "math",
+              "questionNo": "第1问", "knowledgePoints": ["线性代数","固有值"] } ]
 }
 ```
 
-> 错误码：试卷/题目不存在 → `10601` / `10602`。以上读接口均公开（`@PublicApi`），付费门禁由前端判定。
+### 2.16 POST /questions/{code}/difficulty-vote（难度投票）
+
+> **需登录**。每用户每题一票，可改投（upsert）。投票后服务端重算并回写 `crowd_difficulty_rate` / `crowd_votes`。
+
+Body：`{ "vote": "easy" | "medium" | "hard" }`
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": { "questionId": "q-todai-2024-math-3", "vote": "hard",
+            "crowdVotes": { "easy": 12, "medium": 38, "hard": 85 },
+            "crowdDifficultyRate": 0.638 }
+}
+```
+
+> 错误码：`vote` 非法（非 easy/medium/hard）→ `10603`；题目不存在 → `10602`。
+
+### 2.17 PUT /questions/{code}/mastery（掌握自评）
+
+> **需登录**。每用户每题一条最新状态（upsert）。前端同时保留本地 attemptStore 记录（双写）。
+
+Body：`{ "masteryStatus": "mastered" | "unclear" | "wrong" }`
+
+```json
+{
+  "code": 0, "message": "ok",
+  "data": { "questionId": "q-todai-2024-math-3", "masteryStatus": "mastered",
+            "weakPointsUpdated": false }
+}
+```
+
+> 错误码：`masteryStatus` 非法 → `10604`；题目不存在 → `10602`。
+
+> 读接口中 `GET /questions`（§2.13）、`GET /questions/{code}/related`（§2.15）公开（`@PublicApi`），付费门禁由前端判定；`GET /questions/{code}`（§2.14）及以上写接口需登录。试卷/题目不存在 → `10601` / `10602`。
 
 ### 2.10 POST /ai/chat/:sessionId（追问）
 
