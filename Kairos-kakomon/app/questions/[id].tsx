@@ -11,8 +11,8 @@ import {
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { getQuestion } from '@/api/questions';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getQuestion, getRelatedQuestions, voteQuestionDifficulty, updateQuestionMastery } from '@/api/questions';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
@@ -25,9 +25,8 @@ import { useAdStore } from '@/store/adStore';
 import { useAttemptStore } from '@/store/attemptStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
 import { canAccessQuestion, isQuestionAccessible } from '@/utils/accessPolicy';
-import { recommendRelated } from '@/utils/recommend';
 import QuestionBlocks from '@/components/study/QuestionBlocks';
-import type { KakomonQuestion, MasteryStatus, RelatedQuestion } from '@/types/question';
+import type { KakomonQuestion, MasteryStatus } from '@/types/question';
 
 type CrowdVote = 'easy' | 'medium' | 'hard' | null;
 
@@ -144,40 +143,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   aiItemTitle: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.textPrimary },
   aiItemBody: { fontSize: Typography.xs, color: c.textSecondary, lineHeight: Typography.xs * 1.6 },
 
-  // Related questions
-  relatedGroup: { gap: 8, marginBottom: 14 },
-  relatedHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  levelBadge: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  levelBadgeText: { fontSize: 11, fontWeight: Typography.weightBold },
-  levelLabel: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold },
-  levelDesc: { fontSize: Typography.xs, color: c.textMuted },
-  relatedCard: { backgroundColor: c.surface, borderRadius: Spacing.cardRadius, borderWidth: 1, borderColor: c.border, padding: Spacing.cardPadding, gap: 6 },
-  relatedCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  relatedCardMeta: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  relatedUni: { fontSize: Typography.xs, fontWeight: Typography.weightSemibold, color: c.textMuted },
-  relatedQno: { fontSize: Typography.xs, color: c.textMuted },
-  relatedConf: { fontSize: Typography.xs, fontWeight: Typography.weightSemibold },
+  // Related lock (shared by 同専題練習)
   relatedLockBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: c.amber500 + '22', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 12 },
   relatedLockText: { fontSize: 10, color: c.amber600, fontWeight: Typography.weightBold },
-  relatedTitle: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.textPrimary, lineHeight: Typography.sm * 1.4 },
-  relatedReason: { fontSize: Typography.xs, color: c.textMuted, lineHeight: Typography.xs * 1.5 },
-
-  // Forum
-  forumCard: { backgroundColor: c.indigo600 + '22', borderRadius: Spacing.cardRadius, borderWidth: 1, borderColor: c.indigo600 + '44', padding: Spacing.cardPadding, flexDirection: 'row', gap: Spacing.sm, alignItems: 'center' },
-  forumText: { flex: 1, gap: 2 },
-  forumTitle: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: c.indigo500 },
-  forumExcerpt: { fontSize: Typography.xs, color: c.textSecondary },
 
   emptyText: { fontSize: Typography.sm, color: c.textMuted, textAlign: 'center', paddingVertical: 8 },
-
-  // Sticky bar
-  stickyBar: { flexDirection: 'row', gap: 8, paddingHorizontal: Spacing.screenPadding, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.background },
-  forumBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: c.border },
-  forumBtnText: { fontSize: Typography.sm, color: c.textSecondary },
-  askAiBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: c.teal500, borderRadius: 10, paddingVertical: 10 },
-  askAiBtnText: { fontSize: Typography.sm, fontWeight: Typography.weightSemibold, color: '#fff' },
-  quotaBadge: { backgroundColor: 'rgba(255,255,255,0.22)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  quotaBadgeText: { fontSize: 10, fontWeight: Typography.weightBold, color: '#fff' },
 
   // Image viewer modal
   imageModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', alignItems: 'center', justifyContent: 'center' },
@@ -196,12 +166,6 @@ export default function QuestionDetailScreen() {
     { k: 'unclear'  as MasteryStatus, label: '模糊', activeColor: Colors.amber500, bgColor: Colors.amber50,  textColor: Colors.amber600 },
     { k: 'wrong'    as MasteryStatus, label: '不会', activeColor: Colors.rose500,  bgColor: Colors.rose50,   textColor: Colors.rose600  },
   ] as const;
-
-  const RELATED_LEVEL_COLORS = {
-    1: { bg: Colors.green50,  text: Colors.green600,  label: '同题',     desc: '完全相同考点' },
-    2: { bg: Colors.blue50,   text: Colors.blue700,   label: '相似考点', desc: '同父概念 / 相似解法' },
-    3: { bg: Colors.indigo50, text: Colors.indigo600, label: '跨校相似题', desc: '同学科 · 异校风格' },
-  };
 
   const router = useRouter();
   const { id, list } = useLocalSearchParams<{ id: string; list?: string }>();
@@ -227,24 +191,19 @@ export default function QuestionDetailScreen() {
     nameCn: question.graduateSchool || question.universityId,
     accent: 'blue' as const,
   };
-  const graduateSchoolFor = (questionId: string) =>
-    KAKOMON_QUESTIONS.find((q) => q.id === questionId)?.graduateSchool;
-
   const [mastery, setMastery] = useState<MasteryStatus | null>(question.masteryStatus ?? null);
   const isFavorite = useFavoritesStore((s) => s.isFavorite);
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
   useFavoritesStore((s) => s.ids); // 订阅，收藏状态变更即刷新
   const bookmarked = isFavorite(question.id);
-  const [crowdVote, setCrowdVote] = useState<CrowdVote>(null);
+  const [crowdVote, setCrowdVote] = useState<CrowdVote>(question.myVote ?? null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
-  const [relatedGate, setRelatedGate] = useState<RelatedQuestion | null>(null);
   // 「下一题」遇到锁定题时的广告闸（与相似题闸分开）。
   const [nextGate, setNextGate] = useState<KakomonQuestion | null>(null);
 
   // Subscribe so locked related cards refresh after an ad unlock.
   useAdStore((s) => s.unlockedQuestionIds);
   useAdStore((s) => s.unlockedSchoolYears);
-  const unlockQuestion = useAdStore((s) => s.unlockQuestion);
   const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
 
   const recordAttempt = useAttemptStore((s) => s.recordAttempt);
@@ -261,6 +220,7 @@ export default function QuestionDetailScreen() {
       title: question.title,
     });
     setMastery(question.masteryStatus ?? null);
+    setCrowdVote(question.myVote ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question.id]);
 
@@ -299,32 +259,32 @@ export default function QuestionDetailScreen() {
     }
   };
 
-  function handleSetMastery(result: MasteryStatus) {
+  async function handleSetMastery(result: MasteryStatus) {
     setMastery(result);
-    if (attemptIdRef.current) setAttemptResult(attemptIdRef.current, result);
+    if (attemptIdRef.current) setAttemptResult(attemptIdRef.current, result); // 本地: 错题本/弱点地图
+    try {
+      await updateQuestionMastery(question.id, result); // 后端持久化
+      queryClient.setQueryData(['question', question.id], (old: KakomonQuestion | undefined) =>
+        old ? { ...old, masteryStatus: result } : old);
+    } catch { /* 网络失败不打断本地交互 */ }
   }
 
-  // 同专题推荐（做完这道再练相关题）。
-  const recommended = useMemo(
-    () => recommendRelated({
-      excludeQuestionId: question.id,
-      knowledgePoints: question.knowledgePoints,
-      subject: question.subject,
-      limit: 3,
-    }),
-    [question.id, question.knowledgePoints, question.subject],
-  );
+  const queryClient = useQueryClient();
 
-  const crowdVotes = question.crowdVotes ?? { easy: 12, medium: 38, hard: 84 };
+  // 同专题练习：后端严格同 学校+研究科+专业+科目, 知识点重合优先
+  const relatedQuery = useQuery({
+    queryKey: ['question-related', question.id],
+    queryFn: () => getRelatedQuestions(question.id),
+    enabled: !!question.id,
+    initialData: [],
+  });
+  const recommended = relatedQuery.data ?? [];
+
+  const crowdVotes = question.crowdVotes ?? { easy: 0, medium: 0, hard: 0 };
   const totalVotes = crowdVotes.easy + crowdVotes.medium + crowdVotes.hard;
-  const hardPct = Math.round((crowdVotes.hard / totalVotes) * 100);
-  const easyPct = Math.round((crowdVotes.easy / totalVotes) * 100);
-  const mediumPct = Math.round((crowdVotes.medium / totalVotes) * 100);
-
-  const relatedQuestions = question.relatedQuestions ?? [];
-  const lvl1 = relatedQuestions.filter((r) => r.level === 1);
-  const lvl2 = relatedQuestions.filter((r) => r.level === 2);
-  const lvl3 = relatedQuestions.filter((r) => r.level === 3);
+  const hardPct = totalVotes ? Math.round((crowdVotes.hard / totalVotes) * 100) : 0;
+  const easyPct = totalVotes ? Math.round((crowdVotes.easy / totalVotes) * 100) : 0;
+  const mediumPct = totalVotes ? Math.round((crowdVotes.medium / totalVotes) * 100) : 0;
 
   const isPro = user.isPro;
 
@@ -500,8 +460,9 @@ export default function QuestionDetailScreen() {
             </View>
             <View style={{ gap: 8 }}>
               {recommended.map((rq) => {
-                const ru = KAKOMON_UNIVERSITIES.find((u) => u.id === rq.universityId)!;
-                const racc = canAccessQuestion(user, { universityId: rq.universityId, gradSchool: rq.graduateSchool, year: rq.year, questionId: rq.id });
+                const ru = KAKOMON_UNIVERSITIES.find((u) => u.id === rq.universityId);
+                const ruShort = ru?.short ?? rq.universityName;
+                const racc = canAccessQuestion(user, { universityId: rq.universityId, gradSchool: question.graduateSchool, year: rq.year, questionId: rq.id });
                 return (
                   <Pressable
                     key={rq.id}
@@ -512,7 +473,7 @@ export default function QuestionDetailScreen() {
                     }}
                   >
                     <View style={styles.recTop}>
-                      <Text style={styles.recUni}>{ru?.short} · {rq.year}</Text>
+                      <Text style={styles.recUni}>{ruShort} · {rq.year}</Text>
                       {!racc.allowed && (
                         <View style={styles.relatedLockBadge}>
                           <Icon name="lock" size={9} color={Colors.amber600} />
@@ -556,7 +517,15 @@ export default function QuestionDetailScreen() {
                         ? { borderColor: v.borderColor, backgroundColor: Colors.background }
                         : { borderColor: Colors.border },
                     ]}
-                    onPress={() => setCrowdVote(v.k)}
+                    onPress={async () => {
+                      if (!v.k) return;
+                      setCrowdVote(v.k); // 乐观高亮
+                      try {
+                        const res = await voteQuestionDifficulty(question.id, v.k);
+                        queryClient.setQueryData(['question', question.id], (old: KakomonQuestion | undefined) =>
+                          old ? { ...old, crowdVotes: res.crowdVotes, myVote: res.vote } : old);
+                      } catch { /* 失败保留乐观值, 下次进入以后端为准 */ }
+                    }}
                   >
                     <Text style={[styles.crowdBtnLabel, active && { color: v.activeColor }]}>{v.label}</Text>
                     <Text style={styles.crowdBtnPct}>{v.pct}%</Text>
@@ -690,89 +659,6 @@ export default function QuestionDetailScreen() {
         </View>
         )}
 
-        {/* ⑧⑨⑩ Related questions (3 levels) */}
-        <View style={styles.section}>
-          <View style={styles.sectionRow}>
-            <View style={styles.sectionTitleRow}>
-              <View style={[styles.accentBar, { backgroundColor: Colors.indigo500 }]} />
-              <Text style={styles.sectionTitle}>举一反三</Text>
-            </View>
-            <Text style={styles.sectionMore}>三级关联</Text>
-          </View>
-
-          {([
-            { level: 1, items: lvl1 },
-            { level: 2, items: lvl2 },
-            { level: 3, items: lvl3 },
-          ] as const).map(({ level, items }) => {
-            const cfg = RELATED_LEVEL_COLORS[level];
-            if (items.length === 0) return null;
-            return (
-              <View key={level} style={styles.relatedGroup}>
-                <View style={styles.relatedHeader}>
-                  <View style={[styles.levelBadge, { backgroundColor: cfg.bg }]}>
-                    <Text style={[styles.levelBadgeText, { color: cfg.text }]}>L{level}</Text>
-                  </View>
-                  <Text style={[styles.levelLabel, { color: cfg.text }]}>{cfg.label}</Text>
-                  <Text style={styles.levelDesc}>{cfg.desc}</Text>
-                </View>
-                {items.map((r) => {
-                  // 相似题推荐：跨校 / 超年份的题，按单题级广告解锁判定。
-                  const access = canAccessQuestion(user, { universityId: r.universityId, gradSchool: graduateSchoolFor(r.id), year: r.year, questionId: r.id });
-                  const locked = !access.allowed;
-                  return (
-                    <Pressable
-                      key={r.id}
-                      style={[styles.relatedCard, locked && { opacity: 0.85 }]}
-                      onPress={() => {
-                        if (locked) setRelatedGate(r);
-                        else router.push(`/questions/${r.id}` as any);
-                      }}
-                    >
-                      <View style={styles.relatedCardTop}>
-                        <View style={styles.relatedCardMeta}>
-                          <Text style={styles.relatedUni}>{r.universityName} · {r.year}</Text>
-                          <Text style={styles.relatedQno}>{r.subject} {r.questionNo}</Text>
-                        </View>
-                        {locked ? (
-                          <View style={styles.relatedLockBadge}>
-                            <Icon name="lock" size={9} color={Colors.amber600} />
-                            <Text style={styles.relatedLockText}>看广告</Text>
-                          </View>
-                        ) : (
-                          <Text style={[styles.relatedConf, { color: cfg.text }]}>
-                            {Math.round(r.confidence * 100)}% 匹配
-                          </Text>
-                        )}
-                      </View>
-                      <Text style={styles.relatedTitle}>{r.title}</Text>
-                      <Text style={styles.relatedReason}>
-                        {locked ? '看广告解锁这道相似题，或升级 Pro' : r.reason}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            );
-          })}
-        </View>
-
-        {/* ⑪ Forum discussion entry */}
-        <View style={styles.section}>
-          <Pressable
-            style={styles.forumCard}
-            onPress={() => router.push('/forum/t1' as any)}
-          >
-            <Icon name="message" size={16} color={Colors.indigo500} />
-            <View style={styles.forumText}>
-              <Text style={styles.forumTitle}>论坛 · 18 条相关讨论</Text>
-              <Text style={styles.forumExcerpt}>最热：东大2024数学第3问，为什么一定可对角化？</Text>
-            </View>
-            <Icon name="chevronRight" size={16} color={Colors.indigo500} />
-          </Pressable>
-        </View>
-
-        <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Image viewer modal */}
@@ -796,49 +682,6 @@ export default function QuestionDetailScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* Sticky bar：MVP 用论坛讨论替代 AI 提问（AI 按钮代码保留） */}
-      <View style={styles.stickyBar}>
-        {SHOW_AI ? (
-          <>
-            <Pressable style={styles.forumBtn} onPress={() => router.push('/forum/t1' as any)}>
-              <Icon name="message" size={14} color={Colors.textSecondary} />
-              <Text style={styles.forumBtnText}>论坛</Text>
-            </Pressable>
-            <Pressable
-              style={styles.askAiBtn}
-              onPress={() => router.push(`/ai-chat?questionId=${question.id}` as any)}
-            >
-              <Icon name="sparkles" size={14} color="#fff" />
-              <Text style={styles.askAiBtnText}>问这道题</Text>
-              <View style={styles.quotaBadge}>
-                <Text style={styles.quotaBadgeText}>
-                  {user.freeAiRemaining > 0 ? '免费 1/1' : '消耗 1 Token'}
-                </Text>
-              </View>
-            </Pressable>
-          </>
-        ) : (
-          <Pressable style={[styles.askAiBtn, { backgroundColor: Colors.indigo600 }]} onPress={() => router.push('/forum/t1' as any)}>
-            <Icon name="message" size={14} color="#fff" />
-            <Text style={styles.askAiBtnText}>去论坛讨论这道题</Text>
-          </Pressable>
-        )}
-      </View>
-
-      {relatedGate && (
-        <AdGateModal
-          open={!!relatedGate}
-          onClose={() => setRelatedGate(null)}
-          title={`解锁相似题 · ${relatedGate.universityName} ${relatedGate.year}`}
-          desc="看广告解锁这一道跨校相似题，或升级 Pro 免广告解锁全部"
-          onUnlock={() => {
-            unlockQuestion(relatedGate.id);
-            router.push(`/questions/${relatedGate.id}` as any);
-          }}
-          onUpgrade={() => router.push('/paywall' as any)}
-        />
-      )}
 
       {/* 「下一题」遇锁定题的广告闸：看广告解锁该大学×年份 24h，或升级 Pro */}
       {nextGate && (() => {

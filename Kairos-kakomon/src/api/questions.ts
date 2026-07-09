@@ -4,7 +4,6 @@ import type {
   KakomonQuestion,
   KnowledgeMatrixGroup,
   MasteryStatus,
-  RelatedLevel,
   RelatedQuestion,
   WrongQuestion,
 } from '@/types/question';
@@ -31,14 +30,22 @@ interface QuestionListItemRaw {
 interface QuestionDetailRaw extends QuestionListItemRaw {
   contentBlocks?: KakomonQuestion['contentBlocks'];
   bodyText?: string;
+  crowdDifficultyRate?: number;
+  crowdVotes?: { easy: number; medium: number; hard: number };
+  masteryStatus?: string | null;
+  myVote?: string | null;
 }
 
 interface RelatedRaw {
   id: string;
   title: string;
-  level: number;
-  matchType?: string;
-  reason?: string;
+  universityId: string;
+  universityName: string;
+  year: number;
+  subject: string;
+  subjectCode: string;
+  questionNo: string;
+  knowledgePoints?: string[];
 }
 
 /** 后端 list-item → KakomonQuestion。后端无 crowdDifficultyRate,补 0（Phase 2 终审 finding 3）。 */
@@ -67,23 +74,24 @@ function detailToQuestion(raw: QuestionDetailRaw): KakomonQuestion {
     ...listItemToQuestion(raw),
     contentBlocks: raw.contentBlocks,
     bodyText: raw.bodyText,
+    crowdDifficultyRate: raw.crowdDifficultyRate ?? 0,
+    crowdVotes: raw.crowdVotes,
+    masteryStatus: (raw.masteryStatus as KakomonQuestion['masteryStatus']) ?? null,
+    myVote: (raw.myVote as KakomonQuestion['myVote']) ?? null,
   };
 }
 
-/** 后端 related → RelatedQuestion。后端缺 university/year/subject/questionNo/confidence,填空/0（Phase 2 终审 finding 1）。 */
 function relatedToFront(raw: RelatedRaw): RelatedQuestion {
-  const lvl = (raw.level === 1 || raw.level === 2 || raw.level === 3 ? raw.level : 2) as RelatedLevel;
   return {
     id: raw.id,
     title: raw.title,
-    level: lvl,
-    universityId: '',
-    universityName: '',
-    year: 0,
-    subject: '',
-    questionNo: '',
-    reason: raw.reason ?? '',
-    confidence: 0,
+    universityId: raw.universityId,
+    universityName: raw.universityName,
+    year: raw.year,
+    subject: raw.subject,
+    subjectCode: raw.subjectCode,
+    questionNo: raw.questionNo,
+    knowledgePoints: raw.knowledgePoints ?? [],
   };
 }
 
@@ -105,10 +113,9 @@ export interface RecommendationsResponse {
   total: number;
 }
 
-export interface RelatedQuestionsResponse {
-  items: RelatedQuestion[];
-  level3Total: number;
-  isPro: boolean;
+export async function getRelatedQuestions(id: string): Promise<RelatedQuestion[]> {
+  const raw = await apiRequest<RelatedRaw[]>(`/api/questions/${encodeURIComponent(id)}/related`);
+  return (raw ?? []).map(relatedToFront);
 }
 
 export async function getQuestions(
@@ -149,12 +156,6 @@ export async function getQuestionRecommendations(limit = 10): Promise<Recommenda
   };
 }
 
-export async function getRelatedQuestions(id: string): Promise<RelatedQuestionsResponse> {
-  const raw = await apiRequest<RelatedRaw[]>(`/api/questions/${encodeURIComponent(id)}/related`);
-  const items = (raw ?? []).map(relatedToFront);
-  return { items, level3Total: items.filter((r) => r.level === 3).length, isPro: false };
-}
-
 export async function updateQuestionMastery(
   id: string,
   status: MasteryStatus,
@@ -165,10 +166,12 @@ export async function updateQuestionMastery(
   });
 }
 
+export type CrowdVoteValue = 'easy' | 'medium' | 'hard';
+
 export async function voteQuestionDifficulty(
   id: string,
-  vote: DifficultyLevel,
-): Promise<{ questionId: string; vote: DifficultyLevel; crowdVotes: Record<DifficultyLevel, number> }> {
+  vote: CrowdVoteValue,
+): Promise<{ questionId: string; vote: CrowdVoteValue; crowdVotes: { easy: number; medium: number; hard: number }; crowdDifficultyRate: number }> {
   return apiRequest(`/api/questions/${encodeURIComponent(id)}/difficulty-vote`, {
     method: 'POST',
     body: { vote },

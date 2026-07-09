@@ -382,9 +382,9 @@ export const KAKOMON_QUESTIONS: KakomonQuestion[] = [
       },
     ],
     relatedQuestions: [
-      { id: 'rq1', level: 1, title: '实对称矩阵的对角化与求幂', universityId: 'titech', universityName: '东工大', year: 2021, subject: '数学', questionNo: '第2问', reason: '完全相同考点：正交对角化 + 求 Aⁿ。', confidence: 0.94 },
-      { id: 'rq2', level: 1, title: '二次型标准化', universityId: 'todai', universityName: '东大', year: 2019, subject: '数学', questionNo: '第3问', reason: '同校不同年份，相同套路。', confidence: 0.88 },
-      { id: 'rq3', level: 2, title: '矩阵多项式可逆性判定', universityId: 'kyodai', universityName: '京大', year: 2022, subject: '数学', questionNo: '第1问', reason: '相同方法：用特征值代入多项式。', confidence: 0.79 },
+      { id: 'rq1', title: '实对称矩阵的对角化与求幂', universityId: 'titech', universityName: '东工大', year: 2021, subject: '数学', subjectCode: 'math', questionNo: '第2问', knowledgePoints: ['线性代数', '正交对角化'] },
+      { id: 'rq2', title: '二次型标准化', universityId: 'todai', universityName: '东大', year: 2019, subject: '数学', subjectCode: 'math', questionNo: '第3问', knowledgePoints: ['线性代数', '二次型'] },
+      { id: 'rq3', title: '矩阵多项式可逆性判定', universityId: 'kyodai', universityName: '京大', year: 2022, subject: '数学', subjectCode: 'math', questionNo: '第1问', knowledgePoints: ['线性代数', '特征值'] },
     ],
     hasOriginalImage: true,
   },

@@ -25,6 +25,7 @@ export interface KakomonQuestion {
   crowdDifficultyRate: number;
   crowdVotes?: { easy: number; medium: number; hard: number };
   masteryStatus?: MasteryStatus | null;
+  myVote?: 'easy' | 'medium' | 'hard' | null;
   standardExplanation?: ExplanationStep[];
   referenceMatches?: ReferenceMatch[];
   relatedQuestions?: RelatedQuestion[];
@@ -54,15 +55,14 @@ export interface ReferenceMatch {
 
 export interface RelatedQuestion {
   id: string;
-  level: RelatedLevel;
   title: string;
   universityId: string;
   universityName: string;
   year: number;
   subject: string;
+  subjectCode: string;
   questionNo: string;
-  reason: string;
-  confidence: number;
+  knowledgePoints: string[];
 }
 
 export interface WrongQuestion {
