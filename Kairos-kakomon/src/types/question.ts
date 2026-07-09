@@ -1,6 +1,5 @@
 export type MasteryStatus = 'mastered' | 'unclear' | 'wrong';
 export type MatchType = 'exact_question' | 'same_point' | 'similar_method';
-export type RelatedLevel = 1 | 2 | 3;
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'very_hard';
 

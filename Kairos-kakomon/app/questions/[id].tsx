@@ -259,6 +259,8 @@ export default function QuestionDetailScreen() {
     }
   };
 
+  const queryClient = useQueryClient();
+
   async function handleSetMastery(result: MasteryStatus) {
     setMastery(result);
     if (attemptIdRef.current) setAttemptResult(attemptIdRef.current, result); // 本地: 错题本/弱点地图
@@ -268,8 +270,6 @@ export default function QuestionDetailScreen() {
         old ? { ...old, masteryStatus: result } : old);
     } catch { /* 网络失败不打断本地交互 */ }
   }
-
-  const queryClient = useQueryClient();
 
   // 同专题练习：后端严格同 学校+研究科+专业+科目, 知识点重合优先
   const relatedQuery = useQuery({
