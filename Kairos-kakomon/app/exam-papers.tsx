@@ -49,7 +49,7 @@ export default function ExamPapersScreen() {
     const dur = p.durationMinutes ? `&durationMinutes=${p.durationMinutes}` : '';
     const sel = p.selectRule ? `&selectTotal=${p.selectRule.total}&selectChoose=${p.selectRule.choose}` : '';
     const title = encodeURIComponent(`${year} ${subjectName}`);
-    router.push(`/exam-session?paperCode=${encodeURIComponent(p.id)}&mode=mock&title=${title}${dur}${sel}` as any);
+    router.push(`/exam-session?paperCode=${encodeURIComponent(p.id)}&mode=mock&universityId=${encodeURIComponent(universityId)}&title=${title}${dur}${sel}` as any);
   }
 
   return (
