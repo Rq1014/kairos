@@ -90,7 +90,11 @@ public enum ResultCode {
     /** 试卷不存在或已下线 */
     PAPER_NOT_FOUND(10601, "试卷不存在"),
     /** 题目不存在或已下线 */
-    QUESTION_NOT_FOUND(10602, "题目不存在");
+    QUESTION_NOT_FOUND(10602, "题目不存在"),
+    /** 难度投票值非法(仅 easy/medium/hard) */
+    INVALID_DIFFICULTY_VOTE(10603, "难度投票值不合法"),
+    /** 掌握状态值非法(仅 mastered/unclear/wrong) */
+    INVALID_MASTERY_STATUS(10604, "掌握状态值不合法");
 
     private final int code;
     private final String message;

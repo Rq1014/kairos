@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.QuestionDifficultyVoteMapper">
+
+    <insert id="upsert">
+        INSERT INTO question_difficulty_vote (user_id, question_code, vote)
+        VALUES (#{userId}, #{questionCode}, #{vote})
+        ON DUPLICATE KEY UPDATE vote = VALUES(vote)
+    </insert>
+
+    <select id="countGroupByVote" resultType="map">
+        SELECT vote, COUNT(*) AS cnt
+        FROM question_difficulty_vote
+        WHERE question_code = #{questionCode}
+        GROUP BY vote
+    </select>
+
+    <select id="findUserVote" resultType="string">
+        SELECT vote FROM question_difficulty_vote
+        WHERE user_id = #{userId} AND question_code = #{questionCode}
+    </select>
+</mapper>

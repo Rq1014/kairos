@@ -4,6 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.example.kairos.entity.QuestionEntity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /** 大问 Mapper。 */
@@ -37,4 +38,20 @@ public interface QuestionMapper {
 
     /** 查某大问的知识点标签列表 */
     List<String> findKnowledgePoints(@Param("questionCode") String questionCode);
+
+    /** 回写众包难度缓存列 */
+    int updateCrowd(@Param("code") String code,
+                    @Param("rate") BigDecimal rate,
+                    @Param("votesJson") String votesJson);
+
+    /** 读回众包投票 JSON 字符串(可能为 null) */
+    String findCrowdVotes(@Param("code") String code);
+
+    /** 同专题(严格同 学校+研究科+专业+科目, 排除自身), 按共享知识点数降序、年份降序 */
+    List<QuestionEntity> findSameTopic(@Param("code") String code,
+                                       @Param("universityCode") String universityCode,
+                                       @Param("gradSchoolCode") String gradSchoolCode,
+                                       @Param("majorCode") String majorCode,
+                                       @Param("subjectCode") String subjectCode,
+                                       @Param("limit") int limit);
 }

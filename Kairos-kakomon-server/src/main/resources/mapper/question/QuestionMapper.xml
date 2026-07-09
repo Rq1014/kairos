@@ -78,4 +78,33 @@
         SELECT knowledge_point FROM question_knowledge_point
         WHERE question_code = #{questionCode} ORDER BY id ASC
     </select>
+
+    <update id="updateCrowd">
+        UPDATE question
+        SET crowd_difficulty_rate = #{rate}, crowd_votes = #{votesJson}
+        WHERE code = #{code}
+    </update>
+
+    <select id="findCrowdVotes" resultType="string">
+        SELECT crowd_votes FROM question WHERE code = #{code}
+    </select>
+
+    <select id="findSameTopic" resultMap="QMap">
+        SELECT <include refid="listCols"/>,
+               COUNT(kp.knowledge_point) AS overlap
+        FROM question q
+        LEFT JOIN question_knowledge_point kp
+               ON kp.question_code = q.code
+              AND kp.knowledge_point IN (
+                  SELECT knowledge_point FROM question_knowledge_point WHERE question_code = #{code})
+        WHERE q.status = 1
+          AND q.code != #{code}
+          AND q.university_code = #{universityCode}
+          AND q.grad_school_code = #{gradSchoolCode}
+          AND q.major_code = #{majorCode}
+          AND q.subject_code = #{subjectCode}
+        GROUP BY q.id
+        ORDER BY overlap DESC, q.year DESC, q.order_index ASC
+        LIMIT #{limit}
+    </select>
 </mapper>
