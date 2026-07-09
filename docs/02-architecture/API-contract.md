@@ -106,11 +106,9 @@ Authorization: Bearer <access_token>
 Free 用户访问 Pro-gated 内容时，**不返回 403**，而是在响应体内标记：
 
 ```json
-// 举一反三 L3（Free 用户）
+// 同专题联系（本期：服务端返回全部同专题条目，含超出免费范围的）
 {
-  "level3": [<前2条>],
-  "level3Total": 4,
-  "isPro": false          // 前端根据此字段显示锁定遮罩
+  "related": [<全部同专题条目>]   // 前端用 accessPolicy.canAccessQuestion 判定每条，超范围显示广告解锁遮罩
 }
 
 // 教授 AI 摘要（Free 用户）
