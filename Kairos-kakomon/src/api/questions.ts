@@ -171,7 +171,7 @@ export type CrowdVoteValue = 'easy' | 'medium' | 'hard';
 export async function voteQuestionDifficulty(
   id: string,
   vote: CrowdVoteValue,
-): Promise<{ questionId: string; vote: CrowdVoteValue; crowdVotes: { easy: number; medium: number; hard: number }; crowdDifficultyRate: number }> {
+): Promise<{ questionId: string; vote: CrowdVoteValue; crowdVotes: { easy: number; medium: number; hard: number }; crowdDifficultyRate: number | null }> {
   return apiRequest(`/api/questions/${encodeURIComponent(id)}/difficulty-vote`, {
     method: 'POST',
     body: { vote },

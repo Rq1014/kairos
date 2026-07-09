@@ -33,6 +33,13 @@
         crowd_difficulty_rate, crowd_votes, status, created_at, updated_at
     </sql>
 
+    <!-- 同 listCols 但列带 q. 前缀, 供含 JOIN 的查询(否则 id 等列会与 join 表歧义) -->
+    <sql id="listColsQ">
+        q.id, q.code, q.paper_code, q.university_code, q.grad_school_code, q.major_code, q.year, q.subject_code,
+        q.question_no, q.title, q.order_index, q.difficulty_label, q.difficulty_level,
+        q.crowd_difficulty_rate, q.crowd_votes, q.status, q.created_at, q.updated_at
+    </sql>
+
     <select id="findByCode" resultMap="QMap">
         SELECT * FROM question WHERE code = #{code} AND status = 1
     </select>
@@ -85,12 +92,8 @@
         WHERE code = #{code}
     </update>
 
-    <select id="findCrowdVotes" resultType="string">
-        SELECT crowd_votes FROM question WHERE code = #{code}
-    </select>
-
     <select id="findSameTopic" resultMap="QMap">
-        SELECT <include refid="listCols"/>,
+        SELECT <include refid="listColsQ"/>,
                COUNT(kp.knowledge_point) AS overlap
         FROM question q
         LEFT JOIN question_knowledge_point kp
