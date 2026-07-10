@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.QuestionScopeMapper">
+    <resultMap id="QSMap" type="org.example.kairos.entity.QuestionScopeEntity">
+        <id column="id" property="id"/>
+        <result column="question_code" property="questionCode"/>
+        <result column="university_code" property="universityCode"/>
+        <result column="grad_school_code" property="gradSchoolCode"/>
+        <result column="major_code" property="majorCode"/>
+        <result column="subject_code" property="subjectCode"/>
+        <result column="year" property="year"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <select id="findByQuestionCode" resultMap="QSMap">
+        SELECT * FROM question_scope WHERE question_code = #{questionCode}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+</mapper>

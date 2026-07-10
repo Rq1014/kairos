@@ -8,11 +8,6 @@ public class QuestionEntity {
     private Long id;
     private String code;
     private String paperCode;
-    private String universityCode;
-    private String gradSchoolCode;
-    private String majorCode;
-    private Integer year;
-    private String subjectCode;
     private String questionNo;
     private String title;
     private Integer orderIndex;
@@ -34,16 +29,6 @@ public class QuestionEntity {
     public void setCode(String code) { this.code = code; }
     public String getPaperCode() { return paperCode; }
     public void setPaperCode(String paperCode) { this.paperCode = paperCode; }
-    public String getUniversityCode() { return universityCode; }
-    public void setUniversityCode(String universityCode) { this.universityCode = universityCode; }
-    public String getGradSchoolCode() { return gradSchoolCode; }
-    public void setGradSchoolCode(String gradSchoolCode) { this.gradSchoolCode = gradSchoolCode; }
-    public String getMajorCode() { return majorCode; }
-    public void setMajorCode(String majorCode) { this.majorCode = majorCode; }
-    public Integer getYear() { return year; }
-    public void setYear(Integer year) { this.year = year; }
-    public String getSubjectCode() { return subjectCode; }
-    public void setSubjectCode(String subjectCode) { this.subjectCode = subjectCode; }
     public String getQuestionNo() { return questionNo; }
     public void setQuestionNo(String questionNo) { this.questionNo = questionNo; }
     public String getTitle() { return title; }

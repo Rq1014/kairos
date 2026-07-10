@@ -5,10 +5,12 @@ import tools.jackson.databind.ObjectMapper;
 import org.example.kairos.common.ResultCode;
 import org.example.kairos.common.exception.BizException;
 import org.example.kairos.entity.ExamPaperEntity;
+import org.example.kairos.entity.ExamPaperScopeEntity;
 import org.example.kairos.entity.QuestionEntity;
 import org.example.kairos.entity.SubjectEntity;
 import org.example.kairos.mapper.dict.SubjectMapper;
 import org.example.kairos.mapper.question.ExamPaperMapper;
+import org.example.kairos.mapper.question.ExamPaperScopeMapper;
 import org.example.kairos.mapper.question.QuestionMapper;
 import org.example.kairos.model.response.question.PaperListItemResponse;
 import org.example.kairos.model.response.question.PaperResponse;
@@ -31,6 +33,7 @@ public class PaperQueryServiceImpl implements PaperQueryService {
     @Autowired private QuestionMapper questionMapper;
     @Autowired private SubjectMapper subjectMapper;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private ExamPaperScopeMapper examPaperScopeMapper;
 
     private Map<String, String> subjectNameMap() {
         Map<String, String> m = new HashMap<>();
@@ -44,11 +47,12 @@ public class PaperQueryServiceImpl implements PaperQueryService {
         var names = subjectNameMap();
         List<PaperListItemResponse> out = new ArrayList<>();
         for (ExamPaperEntity p : papers) {
+            ExamPaperScopeEntity primary = primaryScope(p.getCode());
             PaperListItemResponse r = new PaperListItemResponse();
             r.setId(p.getCode());
-            r.setYear(p.getYear());
-            r.setSubjectCode(p.getSubjectCode());
-            r.setSubject(names.getOrDefault(p.getSubjectCode(), p.getSubjectCode()));
+            r.setYear(primary != null ? primary.getYear() : null);
+            r.setSubjectCode(primary != null ? primary.getSubjectCode() : null);
+            r.setSubject(primary != null ? names.getOrDefault(primary.getSubjectCode(), primary.getSubjectCode()) : null);
             r.setTitle(p.getTitle());
             r.setDurationMinutes(p.getDurationMinutes());
             r.setSelectRule(parseSelectRule(p.getSelectRule()));
@@ -63,14 +67,15 @@ public class PaperQueryServiceImpl implements PaperQueryService {
         ExamPaperEntity p = paperMapper.findByCode(code);
         if (p == null) throw new BizException(ResultCode.PAPER_NOT_FOUND);
         var names = subjectNameMap();
+        ExamPaperScopeEntity primary = primaryScope(p.getCode());
         PaperResponse r = new PaperResponse();
         r.setId(p.getCode());
-        r.setUniversityId(p.getUniversityCode());
-        r.setGraduateSchool(p.getGradSchoolCode());
-        r.setMajorId(p.getMajorCode());
-        r.setYear(p.getYear());
-        r.setSubjectCode(p.getSubjectCode());
-        r.setSubject(names.getOrDefault(p.getSubjectCode(), p.getSubjectCode()));
+        r.setUniversityId(primary != null ? primary.getUniversityCode() : null);
+        r.setGraduateSchool(primary != null ? primary.getGradSchoolCode() : null);
+        r.setMajorId(primary != null ? primary.getMajorCode() : null);
+        r.setYear(primary != null ? primary.getYear() : null);
+        r.setSubjectCode(primary != null ? primary.getSubjectCode() : null);
+        r.setSubject(primary != null ? names.getOrDefault(primary.getSubjectCode(), primary.getSubjectCode()) : null);
         r.setTitle(p.getTitle());
         r.setDurationMinutes(p.getDurationMinutes());
         r.setTotalScore(p.getTotalScore());
@@ -81,12 +86,9 @@ public class PaperQueryServiceImpl implements PaperQueryService {
             QuestionListItemResponse qi = new QuestionListItemResponse();
             qi.setId(q.getCode());
             qi.setPaperId(q.getPaperCode());
-            qi.setUniversityId(q.getUniversityCode());
-            qi.setGraduateSchool(q.getGradSchoolCode());
-            qi.setMajorId(q.getMajorCode());
-            qi.setYear(q.getYear());
-            qi.setSubjectCode(q.getSubjectCode());
-            qi.setSubject(names.getOrDefault(q.getSubjectCode(), q.getSubjectCode()));
+            // question 内嵌项的 subject 从卷的主 scope 取
+            qi.setSubjectCode(primary != null ? primary.getSubjectCode() : null);
+            qi.setSubject(primary != null ? names.getOrDefault(primary.getSubjectCode(), primary.getSubjectCode()) : null);
             qi.setQuestionNo(q.getQuestionNo());
             qi.setTitle(q.getTitle());
             qi.setOrderIndex(q.getOrderIndex());
@@ -97,6 +99,12 @@ public class PaperQueryServiceImpl implements PaperQueryService {
         }
         r.setQuestions(qs);
         return r;
+    }
+
+    /** 取试卷的主 scope(sort_order 最小的第一条) */
+    private ExamPaperScopeEntity primaryScope(String paperCode) {
+        List<ExamPaperScopeEntity> list = examPaperScopeMapper.findByPaperCode(paperCode);
+        return list.isEmpty() ? null : list.get(0);
     }
 
     private PaperResponse.SelectRule parseSelectRule(String json) {

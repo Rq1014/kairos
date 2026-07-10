@@ -6,11 +6,6 @@
     <resultMap id="PaperMap" type="org.example.kairos.entity.ExamPaperEntity">
         <id column="id" property="id"/>
         <result column="code" property="code"/>
-        <result column="university_code" property="universityCode"/>
-        <result column="grad_school_code" property="gradSchoolCode"/>
-        <result column="major_code" property="majorCode"/>
-        <result column="year" property="year"/>
-        <result column="subject_code" property="subjectCode"/>
         <result column="title" property="title"/>
         <result column="duration_minutes" property="durationMinutes"/>
         <result column="total_score" property="totalScore"/>
@@ -28,13 +23,13 @@
     </select>
 
     <select id="findByScope" resultMap="PaperMap">
-        SELECT * FROM exam_paper
-        WHERE status = 1
-          AND university_code = #{universityCode}
-          AND grad_school_code = #{gradSchoolCode}
-        <if test="majorCode != null and majorCode != ''">
-          AND major_code = #{majorCode}
-        </if>
-        ORDER BY year DESC, subject_code ASC, sort_order DESC, id ASC
+        SELECT p.* FROM exam_paper p
+        JOIN exam_paper_scope ps ON ps.paper_code = p.code
+        WHERE p.status = 1
+          AND ps.university_code = #{universityCode}
+          AND ps.grad_school_code = #{gradSchoolCode}
+          <if test="majorCode != null and majorCode != ''">AND ps.major_code = #{majorCode}</if>
+        GROUP BY p.id
+        ORDER BY ps.year DESC, ps.subject_code ASC, p.sort_order DESC, p.id ASC
     </select>
 </mapper>

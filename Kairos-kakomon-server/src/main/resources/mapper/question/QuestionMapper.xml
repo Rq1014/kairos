@@ -7,11 +7,6 @@
         <id column="id" property="id"/>
         <result column="code" property="code"/>
         <result column="paper_code" property="paperCode"/>
-        <result column="university_code" property="universityCode"/>
-        <result column="grad_school_code" property="gradSchoolCode"/>
-        <result column="major_code" property="majorCode"/>
-        <result column="year" property="year"/>
-        <result column="subject_code" property="subjectCode"/>
         <result column="question_no" property="questionNo"/>
         <result column="title" property="title"/>
         <result column="order_index" property="orderIndex"/>
@@ -28,16 +23,16 @@
 
     <!-- 列表列集合: 不含 content_blocks / body_text 大字段 -->
     <sql id="listCols">
-        id, code, paper_code, university_code, grad_school_code, major_code, year, subject_code,
-        question_no, title, order_index, difficulty_label, difficulty_level,
-        crowd_difficulty_rate, crowd_votes, status, created_at, updated_at
+        id, code, paper_code, question_no, title, order_index,
+        difficulty_label, difficulty_level, crowd_difficulty_rate, crowd_votes,
+        status, created_at, updated_at
     </sql>
 
-    <!-- 同 listCols 但列带 q. 前缀, 供含 JOIN 的查询(否则 id 等列会与 join 表歧义) -->
+    <!-- 同 listCols 但列带 q. 前缀, 供含 JOIN 的查询 -->
     <sql id="listColsQ">
-        q.id, q.code, q.paper_code, q.university_code, q.grad_school_code, q.major_code, q.year, q.subject_code,
-        q.question_no, q.title, q.order_index, q.difficulty_label, q.difficulty_level,
-        q.crowd_difficulty_rate, q.crowd_votes, q.status, q.created_at, q.updated_at
+        q.id, q.code, q.paper_code, q.question_no, q.title, q.order_index,
+        q.difficulty_label, q.difficulty_level, q.crowd_difficulty_rate, q.crowd_votes,
+        q.status, q.created_at, q.updated_at
     </sql>
 
     <select id="findByCode" resultMap="QMap">
@@ -50,35 +45,57 @@
         ORDER BY order_index ASC, id ASC
     </select>
 
-    <sql id="filter">
-        <where>
-            q.status = 1
-            <if test="universityCode != null and universityCode != ''">AND q.university_code = #{universityCode}</if>
-            <if test="gradSchoolCode != null and gradSchoolCode != ''">AND q.grad_school_code = #{gradSchoolCode}</if>
-            <if test="majorCode != null and majorCode != ''">AND q.major_code = #{majorCode}</if>
-            <if test="year != null">AND q.year = #{year}</if>
-            <if test="subjectCode != null and subjectCode != ''">AND q.subject_code = #{subjectCode}</if>
-            <if test="keyword != null and keyword != ''">
-                AND (q.title LIKE CONCAT('%', #{keyword}, '%') OR q.body_text LIKE CONCAT('%', #{keyword}, '%'))
-            </if>
-            <if test="knowledgePoint != null and knowledgePoint != ''">
-                AND EXISTS (SELECT 1 FROM question_knowledge_point kp
-                            WHERE kp.question_code = q.code AND kp.knowledge_point = #{knowledgePoint})
-            </if>
-        </where>
+    <!-- 命中给定维度的 question code 集合(散题查 question_scope, 挂卷题查所属卷 exam_paper_scope) -->
+    <sql id="scopedCodes">
+        SELECT q.code AS code
+        FROM question q
+        JOIN question_scope s ON s.question_code = q.code
+        WHERE q.status = 1 AND q.paper_code IS NULL
+          <if test="universityCode != null and universityCode != ''">AND s.university_code = #{universityCode}</if>
+          <if test="gradSchoolCode != null and gradSchoolCode != ''">AND s.grad_school_code = #{gradSchoolCode}</if>
+          <if test="majorCode != null and majorCode != ''">AND s.major_code = #{majorCode}</if>
+          <if test="subjectCode != null and subjectCode != ''">AND s.subject_code = #{subjectCode}</if>
+          <if test="year != null">AND s.year = #{year}</if>
+        UNION
+        SELECT q.code AS code
+        FROM question q
+        JOIN exam_paper p ON q.paper_code = p.code
+        JOIN exam_paper_scope ps ON ps.paper_code = p.code
+        WHERE q.status = 1
+          <if test="universityCode != null and universityCode != ''">AND ps.university_code = #{universityCode}</if>
+          <if test="gradSchoolCode != null and gradSchoolCode != ''">AND ps.grad_school_code = #{gradSchoolCode}</if>
+          <if test="majorCode != null and majorCode != ''">AND ps.major_code = #{majorCode}</if>
+          <if test="subjectCode != null and subjectCode != ''">AND ps.subject_code = #{subjectCode}</if>
+          <if test="year != null">AND ps.year = #{year}</if>
+    </sql>
+
+    <!-- 附加过滤(keyword / knowledgePoint), 作用在最终 question 行上 -->
+    <sql id="postFilter">
+        <if test="keyword != null and keyword != ''">
+            AND (q.title LIKE CONCAT('%', #{keyword}, '%') OR q.body_text LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="knowledgePoint != null and knowledgePoint != ''">
+            AND EXISTS (SELECT 1 FROM question_knowledge_point kp
+                        WHERE kp.question_code = q.code AND kp.knowledge_point = #{knowledgePoint})
+        </if>
     </sql>
 
     <select id="findByFilter" resultMap="QMap">
-        SELECT <include refid="listCols"/>
+        SELECT <include refid="listColsQ"/>
         FROM question q
-        <include refid="filter"/>
-        ORDER BY q.year DESC, q.order_index ASC, q.id ASC
+        JOIN ( <include refid="scopedCodes"/> ) sc ON sc.code = q.code
+        WHERE 1=1
+        <include refid="postFilter"/>
+        ORDER BY q.order_index ASC, q.id ASC
         LIMIT #{offset}, #{limit}
     </select>
 
     <select id="countByFilter" resultType="long">
-        SELECT COUNT(*) FROM question q
-        <include refid="filter"/>
+        SELECT COUNT(*)
+        FROM question q
+        JOIN ( <include refid="scopedCodes"/> ) sc ON sc.code = q.code
+        WHERE 1=1
+        <include refid="postFilter"/>
     </select>
 
     <select id="findKnowledgePoints" resultType="string">
@@ -92,22 +109,40 @@
         WHERE code = #{code}
     </update>
 
+    <!-- 源题的所有 (校,研究科,专业,科目) 维度: 散题取 question_scope, 挂卷题取所属卷 scope -->
+    <sql id="srcScopeKeys">
+        SELECT s.university_code AS u, s.grad_school_code AS g, s.major_code AS m, s.subject_code AS sub
+        FROM question_scope s WHERE s.question_code = #{code}
+        UNION
+        SELECT ps.university_code, ps.grad_school_code, ps.major_code, ps.subject_code
+        FROM question q JOIN exam_paper_scope ps ON ps.paper_code = q.paper_code
+        WHERE q.code = #{code}
+    </sql>
+
     <select id="findSameTopic" resultMap="QMap">
-        SELECT <include refid="listColsQ"/>,
-               COUNT(kp.knowledge_point) AS overlap
+        SELECT <include refid="listColsQ"/>, COUNT(kp.knowledge_point) AS overlap
         FROM question q
+        JOIN (
+            SELECT DISTINCT s.question_code AS code
+            FROM question_scope s
+            JOIN ( <include refid="srcScopeKeys"/> ) k
+              ON k.u = s.university_code AND k.g = s.grad_school_code
+             AND k.m = s.major_code AND k.sub = s.subject_code
+            UNION
+            SELECT DISTINCT q2.code
+            FROM question q2
+            JOIN exam_paper_scope ps ON ps.paper_code = q2.paper_code
+            JOIN ( <include refid="srcScopeKeys"/> ) k2
+              ON k2.u = ps.university_code AND k2.g = ps.grad_school_code
+             AND k2.m = ps.major_code AND k2.sub = ps.subject_code
+        ) cand ON cand.code = q.code
         LEFT JOIN question_knowledge_point kp
                ON kp.question_code = q.code
               AND kp.knowledge_point IN (
                   SELECT knowledge_point FROM question_knowledge_point WHERE question_code = #{code})
-        WHERE q.status = 1
-          AND q.code != #{code}
-          AND q.university_code = #{universityCode}
-          AND q.grad_school_code = #{gradSchoolCode}
-          AND q.major_code = #{majorCode}
-          AND q.subject_code = #{subjectCode}
+        WHERE q.status = 1 AND q.code != #{code}
         GROUP BY q.id
-        ORDER BY overlap DESC, q.year DESC, q.order_index ASC
+        ORDER BY overlap DESC, q.order_index ASC
         LIMIT #{limit}
     </select>
 </mapper>

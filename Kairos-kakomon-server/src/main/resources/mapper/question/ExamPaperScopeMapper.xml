@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.question.ExamPaperScopeMapper">
+    <resultMap id="PSMap" type="org.example.kairos.entity.ExamPaperScopeEntity">
+        <id column="id" property="id"/>
+        <result column="paper_code" property="paperCode"/>
+        <result column="university_code" property="universityCode"/>
+        <result column="grad_school_code" property="gradSchoolCode"/>
+        <result column="major_code" property="majorCode"/>
+        <result column="subject_code" property="subjectCode"/>
+        <result column="year" property="year"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <select id="findByPaperCode" resultMap="PSMap">
+        SELECT * FROM exam_paper_scope WHERE paper_code = #{paperCode}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+</mapper>
