@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -7,14 +7,9 @@ import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
-import { Icon } from '@/components/ui';
+import { AdGateModal, Icon } from '@/components/ui';
 import { KAKOMON_UNIVERSITIES } from '@/mocks/data';
-import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
-import { AdGateModal } from '@/components/ui';
-import { canAccessQuestion } from '@/utils/accessPolicy';
-import { DEMO_USER } from '@/mocks/data';
-import { useState, useCallback } from 'react';
 import type { KakomonQuestion } from '@/types/question';
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
@@ -61,9 +56,8 @@ export default function TopicQuestionsScreen() {
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const router = useRouter();
   const params = useLocalSearchParams<{ universityId: string; gradSchool: string; majorId: string; subjectCode: string }>();
-  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
-  const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
-  useAdStore((s) => s.unlockedSchoolYears);
+  const unlockQuestion = useAdStore((s) => s.unlockQuestion);
+  useAdStore((s) => s.unlockedQuestionIds);
 
   const { universityId, gradSchool, majorId, subjectCode } = params;
   const uni = KAKOMON_UNIVERSITIES.find((u) => u.id === universityId);
@@ -79,40 +73,33 @@ export default function TopicQuestionsScreen() {
     enabled: !!universityId && !!subjectCode,
   });
 
-  // getQuestions 内部已带 mock 回退;这里再按 majorId 本地细筛 + 排序,兼容后端未按专业过滤。
+  // 后端已按 scope 过滤；前端只按 subjectCode 排序。
   const questions = useMemo(() => {
     const items = questionsQuery.data?.items ?? [];
-    return items
-      .filter((q) => (gradSchool ? q.graduateSchool === gradSchool : true))
-      .filter((q) => (majorId && q.majorId ? q.majorId === majorId : true))
-      .filter((q) => q.subjectCode === subjectCode)
-      .sort((a, b) => b.year - a.year);
-  }, [questionsQuery.data, gradSchool, majorId, subjectCode]);
+    return items.filter((q) => q.subjectCode === subjectCode);
+  }, [questionsQuery.data, subjectCode]);
 
   const [gate, setGate] = useState<KakomonQuestion | null>(null);
 
   const handlePress = useCallback((q: KakomonQuestion) => {
-    const access = canAccessQuestion(user, { universityId: q.universityId, gradSchool: q.graduateSchool, year: q.year, questionId: q.id });
-    if (access.allowed) {
+    if (!q.locked) {
       const ids = questions.map((x) => x.id).join(',');
       router.push(`/questions/${q.id}?list=${ids}` as any);
     } else {
       setGate(q);
     }
-  }, [user, questions]);
+  }, [questions, router]);
 
   const renderItem = useCallback(({ item: q }: { item: KakomonQuestion }) => {
-    const access = canAccessQuestion(user, { universityId: q.universityId, gradSchool: q.graduateSchool, year: q.year, questionId: q.id });
-    const locked = !access.allowed;
+    const locked = !!q.locked;
     const dc = diffColor(q.difficultyLevel, Colors);
     return (
       <Pressable style={[styles.card, locked && styles.cardLocked]} onPress={() => handlePress(q)}>
         <View style={styles.cardTop}>
           <Text style={styles.cardTitle} numberOfLines={2}>{q.title}</Text>
-          <View style={styles.yearBadge}><Text style={styles.yearText}>{q.year}</Text></View>
         </View>
         <View style={styles.cardMeta}>
-          <Text style={styles.uniText}>{uni?.short ?? universityId} · {q.questionNo}</Text>
+          <Text style={styles.uniText}>{q.subject} · {q.questionNo}</Text>
           {q.difficultyLabel && (
             <View style={[styles.diffBadge, { backgroundColor: dc.bg }]}>
               <Text style={[styles.diffText, { color: dc.fg }]}>{q.difficultyLabel}</Text>
@@ -127,7 +114,7 @@ export default function TopicQuestionsScreen() {
         </View>
       </Pressable>
     );
-  }, [user, Colors, styles, handlePress]);
+  }, [Colors, styles, handlePress]);
 
   const keyExtractor = useCallback((q: KakomonQuestion) => q.id, []);
 
@@ -162,11 +149,13 @@ export default function TopicQuestionsScreen() {
         <AdGateModal
           open={!!gate}
           onClose={() => setGate(null)}
-          title={`解锁 ${uni?.short ?? ''} ${gate.year} 年题目`}
-          desc={`看广告解锁 ${uni?.short ?? ''} ${gate.year} 年全部题目 · 24 小时内有效`}
+          title="超出免费范围"
+          desc="该题超出免费范围，看广告解锁"
           onUnlock={() => {
-            unlockSchoolYear(gate.universityId, gate.year);
+            unlockQuestion(gate.id);
             setGate(null);
+            const ids = questions.map((x) => x.id).join(',');
+            router.push(`/questions/${gate.id}?list=${ids}` as any);
           }}
           onUpgrade={() => router.push('/paywall' as any)}
         />

@@ -4,8 +4,6 @@ import type { MasteryStatus } from './question';
 export interface QuestionAttempt {
   id: string;
   questionId: string;
-  universityId: string;
-  year: number;
   subject: string;
   title: string;
   /** 用户自评结果（沿用掌握度三态）。null = 已打开但未评价（未完成）。 */

@@ -19,7 +19,7 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, DEMO_USER } from '@/mocks/data';
 import { useAuthStore } from '@/store/authStore';
 
 // ─── Types ──────────────────────────────────────────────────
@@ -249,7 +249,6 @@ export default function AiChatScreen() {
   const user = useAuthStore((s) => s.user) ?? DEMO_USER;
 
   const question   = questionId ? KAKOMON_QUESTIONS.find((q) => q.id === questionId) : null;
-  const university = question   ? KAKOMON_UNIVERSITIES.find((u) => u.id === question.universityId) : null;
 
   const [messages, setMessages]   = useState<Message[]>([
     { role: 'user', text: '为什么这里一定可以对角化？Aⁿ 怎么算？' },
@@ -367,9 +366,9 @@ export default function AiChatScreen() {
         </Pressable>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>AI · 这道题</Text>
-          {university && question && (
+          {question && (
             <Text style={styles.headerSub}>
-              {university.short} · {question.year} {question.subject} {question.questionNo}
+              {question.subject} {question.questionNo}
             </Text>
           )}
         </View>

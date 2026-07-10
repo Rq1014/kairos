@@ -17,14 +17,12 @@ import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
-import { AdGateModal, Badge, Card, Chip, Icon } from '@/components/ui';
+import { AdGateModal, Badge, Card, Icon } from '@/components/ui';
 import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
-import { dictGradName } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
 import { useAttemptStore } from '@/store/attemptStore';
 import { useFavoritesStore } from '@/store/favoritesStore';
-import { canAccessQuestion, isQuestionAccessible } from '@/utils/accessPolicy';
 import QuestionBlocks from '@/components/study/QuestionBlocks';
 import type { KakomonQuestion, MasteryStatus } from '@/types/question';
 
@@ -183,14 +181,6 @@ export default function QuestionDetailScreen() {
     initialData: mockQuestion,
   });
   const question = questionQuery.data ?? mockQuestion;
-  const universityHit = KAKOMON_UNIVERSITIES.find((u) => u.id === question.universityId);
-  const university = universityHit ?? {
-    ...KAKOMON_UNIVERSITIES[0],
-    id: question.universityId,
-    short: question.universityId,
-    nameCn: question.graduateSchool || question.universityId,
-    accent: 'blue' as const,
-  };
   const [mastery, setMastery] = useState<MasteryStatus | null>(question.masteryStatus ?? null);
   const isFavorite = useFavoritesStore((s) => s.isFavorite);
   const toggleFavorite = useFavoritesStore((s) => s.toggle);
@@ -204,7 +194,7 @@ export default function QuestionDetailScreen() {
   // Subscribe so locked related cards refresh after an ad unlock.
   useAdStore((s) => s.unlockedQuestionIds);
   useAdStore((s) => s.unlockedSchoolYears);
-  const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
+  const unlockQuestion = useAdStore((s) => s.unlockQuestion);
 
   const recordAttempt = useAttemptStore((s) => s.recordAttempt);
   const setAttemptResult = useAttemptStore((s) => s.setAttemptResult);
@@ -214,8 +204,6 @@ export default function QuestionDetailScreen() {
   useEffect(() => {
     attemptIdRef.current = recordAttempt({
       questionId: question.id,
-      universityId: question.universityId,
-      year: question.year,
       subject: question.subject,
       title: question.title,
     });
@@ -227,7 +215,7 @@ export default function QuestionDetailScreen() {
   // 下一题：
   //  1) 有列表上下文(从专题/错题本进入) → 按列表顺序取当前之后的下一题（不跳过锁定题，
   //     锁定题在跳转时走广告闸，不绕过限制）；
-  //  2) 否则 → 同科目、可访问、排在当前之后的题（兜底）。
+  //  2) 否则 → 同科目、非锁定、排在当前之后的题（兜底）。
   const nextQuestion = useMemo(() => {
     if (listIds.length > 0) {
       const idx = listIds.indexOf(question.id);
@@ -239,20 +227,17 @@ export default function QuestionDetailScreen() {
       return null; // 列表已是最后一题
     }
     const accessible = KAKOMON_QUESTIONS.filter(
-      (q) => q.id !== question.id && isQuestionAccessible(user, { universityId: q.universityId, gradSchool: q.graduateSchool, year: q.year, questionId: q.id }),
+      (q) => q.id !== question.id && !q.locked,
     );
     const sameSubject = accessible.filter((q) => q.subject === question.subject);
     return sameSubject[0] ?? accessible[0] ?? null;
-  }, [question.id, question.subject, user, listIds]);
+  }, [question.id, question.subject, listIds]);
 
   // 跳转到下一题：先校验访问权限，锁定则弹广告闸，避免绕过限制。
   const goNext = () => {
     if (!nextQuestion) return;
     const suffix = listIds.length > 0 ? `?list=${listIds.join(',')}` : '';
-    const access = canAccessQuestion(user, {
-      universityId: nextQuestion.universityId, gradSchool: nextQuestion.graduateSchool, year: nextQuestion.year, questionId: nextQuestion.id,
-    });
-    if (access.allowed) {
+    if (!nextQuestion.locked) {
       router.replace(`/questions/${nextQuestion.id}${suffix}` as any);
     } else {
       setNextGate(nextQuestion);
@@ -302,8 +287,8 @@ export default function QuestionDetailScreen() {
           <Icon name="chevronLeft" size={22} color={Colors.textPrimary} />
         </Pressable>
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{university.short} · {question.year}</Text>
-          <Text style={styles.headerSub}>{question.subject} · {question.questionNo}</Text>
+          <Text style={styles.headerTitle}>{question.subject} · {question.questionNo}</Text>
+          <Text style={styles.headerSub}>{question.title}</Text>
         </View>
         <View style={styles.headerRight}>
           <Pressable
@@ -335,14 +320,8 @@ export default function QuestionDetailScreen() {
         {/* ① Metadata */}
         <View style={styles.section}>
           <Card style={styles.sectionCard}>
-            <View style={styles.chipRow}>
-              <Chip color={university.accent as 'blue' | 'teal' | 'indigo'} size="sm">
-                {university.nameCn}
-              </Chip>
-              <Chip color="slate" size="sm">{dictGradName(question.universityId, question.graduateSchool)}</Chip>
-            </View>
             <Text style={styles.title}>{question.title}</Text>
-            <Text style={styles.metaLine}>{question.year} · {question.subject} · {question.questionNo}</Text>
+            <Text style={styles.metaLine}>{question.subject} · {question.questionNo}</Text>
             <View style={styles.chipRow}>
               {question.knowledgePoints.map((k, i) => (
                 <View key={k} style={i === 0 ? styles.subjectTag : styles.pointTag}>
@@ -442,7 +421,7 @@ export default function QuestionDetailScreen() {
             )}
             {nextQuestion && mastery && (
               <Text style={styles.nextHint} numberOfLines={1}>
-                下一题：{KAKOMON_UNIVERSITIES.find((u) => u.id === nextQuestion.universityId)?.short} {nextQuestion.year} · {nextQuestion.title}
+                下一题：{nextQuestion.subject} · {nextQuestion.title}
               </Text>
             )}
           </Card>
@@ -462,24 +441,16 @@ export default function QuestionDetailScreen() {
               {recommended.map((rq) => {
                 const ru = KAKOMON_UNIVERSITIES.find((u) => u.id === rq.universityId);
                 const ruShort = ru?.short ?? rq.universityName;
-                const racc = canAccessQuestion(user, { universityId: rq.universityId, gradSchool: question.graduateSchool, year: rq.year, questionId: rq.id });
                 return (
                   <Pressable
                     key={rq.id}
-                    style={[styles.recCard, !racc.allowed && { opacity: 0.85 }]}
+                    style={styles.recCard}
                     onPress={() => {
-                      if (racc.allowed) router.replace(`/questions/${rq.id}` as any);
-                      else router.push('/search' as any);
+                      router.replace(`/questions/${rq.id}` as any);
                     }}
                   >
                     <View style={styles.recTop}>
                       <Text style={styles.recUni}>{ruShort} · {rq.year}</Text>
-                      {!racc.allowed && (
-                        <View style={styles.relatedLockBadge}>
-                          <Icon name="lock" size={9} color={Colors.amber600} />
-                          <Text style={styles.relatedLockText}>看广告</Text>
-                        </View>
-                      )}
                     </View>
                     <Text style={styles.recTitle}>{rq.title}</Text>
                     <View style={styles.recTags}>
@@ -676,30 +647,24 @@ export default function QuestionDetailScreen() {
           <View style={styles.imageModalContent}>
             <Icon name="pageRef" size={48} color={Colors.textMuted} />
             <Text style={styles.imageModalLabel}>
-              {university.short} {question.year} {question.subject} {question.questionNo}
+              {question.subject} {question.questionNo}
             </Text>
             <Text style={styles.imageModalSub}>原版扫描图像</Text>
           </View>
         </View>
       </Modal>
 
-      {/* 「下一题」遇锁定题的广告闸：看广告解锁该大学×年份 24h，或升级 Pro */}
+      {/* 「下一题」遇锁定题的广告闸：看广告解锁，或升级 Pro */}
       {nextGate && (() => {
-        const reason = canAccessQuestion(user, {
-          universityId: nextGate.universityId, gradSchool: nextGate.graduateSchool, year: nextGate.year, questionId: nextGate.id,
-        }).reason;
-        const uniShort = KAKOMON_UNIVERSITIES.find((u) => u.id === nextGate.universityId)?.short ?? '该校';
         const listSuffix = listIds.length > 0 ? `?list=${listIds.join(',')}` : '';
         return (
           <AdGateModal
             open={!!nextGate}
             onClose={() => setNextGate(null)}
-            title={`解锁 ${uniShort} ${nextGate.year}`}
-            desc={reason === 'year'
-              ? `看广告解锁 ${uniShort} ${nextGate.year} 年全部题目 · 24 小时，或升级 Pro`
-              : `${uniShort} 该研究科不在免费 3 个研究科内，也可看广告解锁该大学 ${nextGate.year} 年题目 · 24 小时`}
+            title="超出免费范围"
+            desc="该题超出免费范围，看广告解锁"
             onUnlock={() => {
-              unlockSchoolYear(nextGate.universityId, nextGate.year);
+              unlockQuestion(nextGate.id);
               router.replace(`/questions/${nextGate.id}${listSuffix}` as any);
             }}
             onUpgrade={() => router.push('/paywall' as any)}

@@ -13,18 +13,15 @@ import { apiRequest } from './client';
 interface QuestionListItemRaw {
   id: string;
   paperId?: string;
-  universityId: string;
-  graduateSchool: string;
-  year: number;
   subject: string;
   subjectCode: string;
-  majorId?: string;
   questionNo: string;
   title: string;
   orderIndex?: number;
   difficultyLabel?: string;
   difficultyLevel?: DifficultyLevel;
   knowledgePoints?: string[];
+  locked?: boolean;
 }
 
 interface QuestionDetailRaw extends QuestionListItemRaw {
@@ -34,6 +31,7 @@ interface QuestionDetailRaw extends QuestionListItemRaw {
   crowdVotes?: { easy: number; medium: number; hard: number };
   masteryStatus?: string | null;
   myVote?: string | null;
+  locked?: boolean;
 }
 
 interface RelatedRaw {
@@ -52,10 +50,6 @@ interface RelatedRaw {
 function listItemToQuestion(raw: QuestionListItemRaw): KakomonQuestion {
   return {
     id: raw.id,
-    universityId: raw.universityId,
-    graduateSchool: raw.graduateSchool,
-    majorId: raw.majorId,
-    year: raw.year,
     subject: raw.subject,
     subjectCode: raw.subjectCode,
     questionNo: raw.questionNo,
@@ -66,6 +60,7 @@ function listItemToQuestion(raw: QuestionListItemRaw): KakomonQuestion {
     difficultyLabel: raw.difficultyLabel ?? '',
     difficultyLevel: raw.difficultyLevel,
     crowdDifficultyRate: 0,
+    locked: raw.locked ?? false,
   };
 }
 
@@ -78,6 +73,7 @@ function detailToQuestion(raw: QuestionDetailRaw): KakomonQuestion {
     crowdVotes: raw.crowdVotes,
     masteryStatus: (raw.masteryStatus as KakomonQuestion['masteryStatus']) ?? null,
     myVote: (raw.myVote as KakomonQuestion['myVote']) ?? null,
+    locked: raw.locked ?? false,
   };
 }
 

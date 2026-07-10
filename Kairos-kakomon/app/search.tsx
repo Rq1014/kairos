@@ -1,6 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import {
-  FlatList,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -15,15 +14,11 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { AdGateModal, Icon, SchoolLogo } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, KAKOMON_SEARCH_RECENT, KAKOMON_SEARCH_HOT, DEMO_USER } from '@/mocks/data';
+import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, KAKOMON_SEARCH_RECENT, KAKOMON_SEARCH_HOT } from '@/mocks/data';
 import { dictGradName, dictGrads, useDictStore } from '@/store/dictStore';
-import { useAuthStore } from '@/store/authStore';
 import { useAdStore } from '@/store/adStore';
-import { canAccessQuestion, lockHint, type LockReason } from '@/utils/accessPolicy';
 
 const FILTER_OPTIONS = {
-  school: ['全部', '东大', '东工大', '京大', '早大', '庆应', '阪大'],
-  year:    ['全部', '2026', '2025', '2024', '2023', '2022', '2021', '2019'],
   subject: ['全部', '数学', '情报', '物理', '统计'],
   difficulty: ['全部', '简单', '中等', '偏难', '极难'],
 };
@@ -63,24 +58,16 @@ function BrowseDrillDown({
   // Subscribe to dict version so component re-renders when dictionary refreshes
   useDictStore((s) => s.version);
 
-  // 该校实际有题目的研究科（按题量），与预设研究科列表合并。
+  // 研究科列表（从字典获取）。
   const gradList = useMemo(() => {
-    const counts = new Map<string, number>();
-    KAKOMON_QUESTIONS
-      .filter((q) => q.universityId === universityId)
-      .forEach((q) => counts.set(q.graduateSchool, (counts.get(q.graduateSchool) ?? 0) + 1));
     const preset = dictGrads(universityId);
-    const names = Array.from(new Set([...preset, ...counts.keys()]));
-    return names
-      .map((name) => ({ name, count: counts.get(name) ?? 0 }))
-      .sort((a, b) => b.count - a.count);
+    return preset.map((name) => ({ name, count: 0 }));
   }, [universityId]);
 
+  // 该研究科下题目（后端未接入，暂无本地匹配逻辑）
   const gradQuestions = useMemo(
-    () => (grad
-      ? KAKOMON_QUESTIONS.filter((q) => q.universityId === universityId && q.graduateSchool === grad)
-      : []),
-    [universityId, grad],
+    () => (grad ? KAKOMON_QUESTIONS.slice(0, 0) : []),
+    [grad],
   );
 
   return (
@@ -131,7 +118,7 @@ function BrowseDrillDown({
             <Pressable key={q.id} style={styles.resultCard} onPress={() => onOpenQuestion(q)}>
               <View style={styles.resultChips}>
                 <View style={styles.uniChip}><Text style={styles.uniChipText}>{u?.short ?? '—'}</Text></View>
-                <Text style={styles.resultMeta}>{q.year} · {q.subject} {q.questionNo}</Text>
+                <Text style={styles.resultMeta}>{q.subject} {q.questionNo}</Text>
               </View>
               <Text style={styles.resultTitle}>{q.title}</Text>
               <View style={styles.resultKPs}>
@@ -228,24 +215,19 @@ type ResultCardProps = {
   q: typeof KAKOMON_QUESTIONS[number];
   query: string;
   locked: boolean;
-  reason: LockReason | null;
   styles: ReturnType<typeof makeStyles>;
   Colors: ThemeColors;
-  onPress: (q: typeof KAKOMON_QUESTIONS[number], locked: boolean, reason: LockReason | null) => void;
+  onPress: (q: typeof KAKOMON_QUESTIONS[number], locked: boolean) => void;
 };
 
-function ResultCardImpl({ q, query, locked, reason, styles, Colors, onPress }: ResultCardProps) {
-  const u = KAKOMON_UNIVERSITIES.find((x) => x.id === q.universityId);
+function ResultCardImpl({ q, query, locked, styles, Colors, onPress }: ResultCardProps) {
   return (
     <Pressable
       style={[styles.resultCard, locked && styles.resultCardLocked]}
-      onPress={() => onPress(q, locked, reason)}
+      onPress={() => onPress(q, locked)}
     >
       <View style={styles.resultChips}>
-        <View style={styles.uniChip}>
-          <Text style={styles.uniChipText}>{u?.short ?? '—'}</Text>
-        </View>
-        <Text style={styles.resultMeta}>{q.year} · {q.subject} {q.questionNo}</Text>
+        <Text style={styles.resultMeta}>{q.subject} {q.questionNo}</Text>
         {locked && (
           <View style={styles.lockBadge}>
             <Icon name="lock" size={9} color={Colors.amber600} />
@@ -256,10 +238,10 @@ function ResultCardImpl({ q, query, locked, reason, styles, Colors, onPress }: R
       <Text style={styles.resultTitle}>
         <HighlightText text={q.title} keyword={query} Colors={Colors} />
       </Text>
-      {locked && reason ? (
+      {locked ? (
         <View style={styles.lockHintRow}>
           <Icon name="lock" size={11} color={Colors.amber600} />
-          <Text style={styles.lockHintText}>{lockHint(reason)}</Text>
+          <Text style={styles.lockHintText}>超出免费范围 · 看广告解锁</Text>
         </View>
       ) : (
         <View style={styles.resultKPs}>
@@ -286,18 +268,16 @@ export default function SearchScreen() {
   };
 
   const router = useRouter();
-  const user = useAuthStore((s) => s.user) ?? DEMO_USER;
   // Subscribe to unlock maps so the list re-renders right after an ad unlock.
   useAdStore((s) => s.unlockedQuestionIds);
-  useAdStore((s) => s.unlockedSchoolYears);
-  const unlockSchoolYear = useAdStore((s) => s.unlockSchoolYear);
+  const unlockQuestion = useAdStore((s) => s.unlockQuestion);
 
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<Filters>({
-    school: '全部', year: '全部', subject: '全部', difficulty: '全部',
+    subject: '全部', difficulty: '全部',
   });
   const [openFilter, setOpenFilter] = useState<FilterKey | null>(null);
-  const [gate, setGate] = useState<{ questionId: string; universityId: string; uniShort: string; year: number; reason: 'year' | 'school' | 'both' } | null>(null);
+  const [gate, setGate] = useState<{ questionId: string } | null>(null);
 
   // 浏览下钻：学校 → 研究科 → 习题。
   const [browseUni, setBrowseUni] = useState<string | null>(null);
@@ -309,15 +289,11 @@ export default function SearchScreen() {
     if (!hasQuery) return [];
     const kw = query.trim();
     return KAKOMON_QUESTIONS.filter((q) => {
-      const u = KAKOMON_UNIVERSITIES.find((x) => x.id === q.universityId);
       const matchKw =
         q.title.includes(kw) ||
         (q.knowledgePoints ?? []).some((k) => k.includes(kw)) ||
-        (u && u.short.includes(kw)) ||
         q.subject.includes(kw);
       if (!matchKw) return false;
-      if (filters.school !== '全部' && u && u.short !== filters.school) return false;
-      if (filters.year !== '全部' && String(q.year) !== filters.year) return false;
       if (filters.subject !== '全部' && q.subject !== filters.subject) return false;
       return true;
     });
@@ -329,10 +305,9 @@ export default function SearchScreen() {
   };
 
   const handleResultPress = useCallback(
-    (q: typeof KAKOMON_QUESTIONS[number], locked: boolean, reason: LockReason | null) => {
-      if (locked && reason) {
-        const u = KAKOMON_UNIVERSITIES.find((x) => x.id === q.universityId);
-        setGate({ questionId: q.id, universityId: q.universityId, uniShort: u?.short ?? '该校', year: q.year, reason });
+    (q: typeof KAKOMON_QUESTIONS[number], locked: boolean) => {
+      if (locked) {
+        setGate({ questionId: q.id });
       } else {
         router.push(`/questions/${q.id}` as any);
       }
@@ -433,10 +408,8 @@ export default function SearchScreen() {
             onPickGrad={setBrowseGrad}
             onBackToGrads={() => setBrowseGrad(null)}
             onOpenQuestion={(q) => {
-              const access = canAccessQuestion(user, { universityId: q.universityId, gradSchool: q.graduateSchool, year: q.year, questionId: q.id });
-              if (!access.allowed && access.reason) {
-                const u = KAKOMON_UNIVERSITIES.find((x) => x.id === q.universityId);
-                setGate({ questionId: q.id, universityId: q.universityId, uniShort: u?.short ?? '该校', year: q.year, reason: access.reason });
+              if (q.locked) {
+                setGate({ questionId: q.id });
               } else {
                 router.push(`/questions/${q.id}` as any);
               }
@@ -462,7 +435,7 @@ export default function SearchScreen() {
                       onPress={() => setOpenFilter(isOpen ? null : key)}
                     >
                       <Text style={[styles.filterChipText, !isAll && styles.filterChipTextActive]}>
-                        {key === 'school' ? '学校' : key === 'year' ? '年份' : key === 'subject' ? '科目' : '难度'}
+                        {key === 'subject' ? '科目' : '难度'}
                         {!isAll ? `：${filters[key]}` : ''}
                       </Text>
                       <Icon name={isOpen ? 'chevronUp' : 'chevronDown'} size={11} color={isAll ? Colors.textMuted : Colors.blue500} />
@@ -508,15 +481,13 @@ export default function SearchScreen() {
                 </View>
               ) : (
                 results.map((q) => {
-                  const access = canAccessQuestion(user, { universityId: q.universityId, gradSchool: q.graduateSchool, year: q.year, questionId: q.id });
-                  const locked = !access.allowed;
+                  const locked = !!q.locked;
                   return (
                     <ResultCard
                       key={q.id}
                       q={q}
                       query={query}
                       locked={locked}
-                      reason={access.reason}
                       styles={styles}
                       Colors={Colors}
                       onPress={handleResultPress}
@@ -535,14 +506,10 @@ export default function SearchScreen() {
         <AdGateModal
           open={!!gate}
           onClose={() => setGate(null)}
-          title={`解锁 ${gate.uniShort} ${gate.year}`}
-          desc={
-            gate.reason === 'year'
-              ? `看广告解锁 ${gate.uniShort} ${gate.year} 年全部题目 · 24 小时`
-              : `${gate.uniShort} 不在免费 3 个研究科内，也可看广告解锁该大学 ${gate.year} 年题目 · 24 小时`
-          }
+          title="超出免费范围"
+          desc="该题超出免费范围，看广告解锁"
           onUnlock={() => {
-            unlockSchoolYear(gate.universityId, gate.year);
+            unlockQuestion(gate.questionId);
             router.push(`/questions/${gate.questionId}` as any);
           }}
           onUpgrade={() => router.push('/paywall' as any)}

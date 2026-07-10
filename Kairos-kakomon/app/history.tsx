@@ -13,7 +13,6 @@ import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_UNIVERSITIES } from '@/mocks/data';
 import { useAttemptStore } from '@/store/attemptStore';
 import type { QuestionAttempt } from '@/types/attempt';
 import type { MasteryStatus } from '@/types/question';
@@ -119,12 +118,11 @@ export default function HistoryScreen() {
             <View key={day}>
               <Text style={styles.dayHeader}>{day}</Text>
               {items.map((a) => {
-                const u = KAKOMON_UNIVERSITIES.find((x) => x.id === a.universityId);
                 const rm = a.result ? RESULT_META[a.result] : null;
                 return (
                   <Pressable key={a.id} style={styles.card} onPress={() => router.push(`/questions/${a.questionId}` as any)}>
                     <View style={styles.cardTop}>
-                      <Text style={styles.meta}>{u?.short} {a.year} · {a.subject}</Text>
+                      <Text style={styles.meta}>{a.subject}</Text>
                       {rm ? (
                         <View style={[styles.resultChip, { backgroundColor: resultBg(rm.colorKey) }]}>
                           <Text style={[styles.resultChipText, { color: resultColor(rm.colorKey) }]}>{rm.label}</Text>

@@ -238,7 +238,7 @@ export default function ThreadDetailScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.linkedQLabel}>关联题目</Text>
                   <Text style={styles.linkedQTitle}>{q.title}</Text>
-                  <Text style={styles.linkedQMeta}>{u?.short} · {q.year} {q.subject} {q.questionNo}</Text>
+                  <Text style={styles.linkedQMeta}>{u?.short} · {q.subject} {q.questionNo}</Text>
                 </View>
               </Pressable>
             )}

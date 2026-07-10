@@ -347,7 +347,7 @@ export default function UniversityDetailScreen() {
   }
 
   const accent500 = ACCENT_500[u.accent] ?? Colors.blue500;
-  const uniQuestions = KAKOMON_QUESTIONS.filter((q) => q.universityId === u.id);
+  const uniQuestions: typeof KAKOMON_QUESTIONS = [];
   const uniThreads   = KAKOMON_THREADS.filter((t) => t.universityId === u.id);
   const avgScore = (MOCK_REVIEWS.reduce((s, r) => s + r.score, 0) / MOCK_REVIEWS.length).toFixed(1);
 
@@ -516,7 +516,6 @@ export default function UniversityDetailScreen() {
                   onPress={() => router.push(`/questions/${q.id}` as any)}
                 >
                   <View style={styles.qCardMeta}>
-                    <Text style={styles.qYear}>{q.year}</Text>
                     <Text style={styles.qSubject}>{q.subject} · {q.questionNo}</Text>
                   </View>
                   <Text style={styles.qTitle}>{q.title}</Text>

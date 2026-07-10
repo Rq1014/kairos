@@ -10,7 +10,7 @@ import type { University } from '@/types/university';
 
 interface QuestionCardProps {
   question: KakomonQuestion;
-  university: University;
+  university?: University;
   onPress: () => void;
   showProgress?: boolean;
   progressValue?: number;
@@ -94,8 +94,8 @@ export function QuestionCard({ question, university, onPress, showProgress, prog
       onPress={onPress}
     >
       <View style={styles.chips}>
-        <Chip color={university.accent as 'blue' | 'teal' | 'indigo'} size="sm">{university.short}</Chip>
-        <Chip color="slate" size="sm">{`${question.year} · ${question.subject}`}</Chip>
+        {university && <Chip color={university.accent as 'blue' | 'teal' | 'indigo'} size="sm">{university.short}</Chip>}
+        <Chip color="slate" size="sm">{question.subject}</Chip>
         {question.difficultyLabel && (
           <Chip color="amber" size="sm">{question.difficultyLabel}</Chip>
         )}

@@ -16,7 +16,7 @@ import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
 import QuestionBlocks from '@/components/study/QuestionBlocks';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES } from '@/mocks/data';
+import { KAKOMON_QUESTIONS } from '@/mocks/data';
 import { useAttemptStore } from '@/store/attemptStore';
 import type { ExamResult } from '@/types/attempt';
 import type { KakomonQuestion } from '@/types/question';
@@ -95,9 +95,6 @@ export default function ExamSessionScreen() {
     if (paperQuery.data?.questionDetails?.length) {
       return paperQuery.data.questionDetails.map((d) => ({
         id: d.id,
-        universityId: d.universityId,
-        graduateSchool: d.graduateSchool,
-        year: d.year,
         subject: d.subject,
         subjectCode: d.subjectCode,
         questionNo: d.questionNo,
@@ -218,7 +215,7 @@ export default function ExamSessionScreen() {
         <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
           <Text style={styles.qIndex}>第 {idx + 1} 题 / 共 {questions.length} 题</Text>
           <Text style={styles.qMeta}>
-            {KAKOMON_UNIVERSITIES.find((u) => u.id === current.universityId)?.short} {current.year} · {current.subject} {current.questionNo}
+            {current.subject} {current.questionNo}
           </Text>
           <Text style={styles.qTitle}>{current.title}</Text>
           <View style={styles.qBodyCard}>
@@ -261,7 +258,7 @@ export default function ExamSessionScreen() {
                 <View>
                   <Text style={styles.gradeQTitle}>{i + 1}. {q.title}</Text>
                   <Text style={styles.gradeQMeta}>
-                    {KAKOMON_UNIVERSITIES.find((u) => u.id === q.universityId)?.short} {q.year} · {q.questionNo}
+                    {q.subject} · {q.questionNo}
                   </Text>
                 </View>
                 <View style={styles.gradeBtns}>

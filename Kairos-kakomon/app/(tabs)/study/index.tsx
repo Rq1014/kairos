@@ -184,9 +184,8 @@ export default function StudyScreen() {
   const targetUniIds = user.targetSchools.map((s) => s.universityId);
   const targetUnis = universities.filter((u) => targetUniIds.includes(u.id));
 
-  // 首次进入(无做题记录)时，hero 兜底用目标校的一道题。
-  const heroFallback = KAKOMON_QUESTIONS.find((q) => targetUniIds.includes(q.universityId))
-    ?? KAKOMON_QUESTIONS[0];
+  // 首次进入(无做题记录)时，hero 兜底用 mock 第一道题。
+  const heroFallback = KAKOMON_QUESTIONS[0];
 
   // 「继续做题」优先级：上次未做完的题 → 最近做过的题 → 兜底题。
   const lastUnfinished = useAttemptStore((s) => s.lastUnfinished);
@@ -199,8 +198,6 @@ export default function StudyScreen() {
     : null;
   const continueQ = resumeQ ?? heroFallback;
   const continueIsResume = !!resumeQ;
-  const continueU = universities.find((u) => u.id === continueQ.universityId)
-    ?? KAKOMON_UNIVERSITIES.find((u) => u.id === continueQ.universityId)!;
 
   const exam = user.nextExam;
   const daysToExam = useMemo(() => {
@@ -300,7 +297,7 @@ export default function StudyScreen() {
             <View style={{ gap: 4 }}>
               <Text style={styles.heroTitle} numberOfLines={1}>{continueQ.title}</Text>
               <Text style={styles.heroMeta}>
-                {continueU?.short} {continueQ.year} · {continueQ.subject} · {continueQ.questionNo}
+                {continueQ.subject} · {continueQ.questionNo}
               </Text>
             </View>
             {continueIsResume && (

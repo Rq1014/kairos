@@ -149,7 +149,7 @@ function ThreadCardImpl({ thread, onPress }: { thread: ForumThread; onPress: () 
         <View style={styles.linkedQ}>
           <Icon name="link" size={11} color={Colors.textMuted} />
           <Text style={styles.linkedQText} numberOfLines={1}>
-            关联：{q.year} {q.subject} {q.questionNo} · {q.title}
+            关联：{q.subject} {q.questionNo} · {q.title}
           </Text>
         </View>
       )}

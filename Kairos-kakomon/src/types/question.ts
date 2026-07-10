@@ -5,11 +5,6 @@ export type DifficultyLevel = 'easy' | 'medium' | 'hard' | 'very_hard';
 
 export interface KakomonQuestion {
   id: string;
-  universityId: string;
-  graduateSchool: string;
-  /** 该题归属的主专业 id（来自 UNI_MAJORS）。缺省视为该研究科全专业通用。 */
-  majorId?: string;
-  year: number;
   subject: string;
   /** 科目机器 code（用于过滤/查询，如 "math"）。展示名用 subject。 */
   subjectCode: string;
@@ -31,6 +26,8 @@ export interface KakomonQuestion {
   hasOriginalImage?: boolean;
   /** 结构化题干内容块（优先渲染；缺省时回退 bodyText）。 */
   contentBlocks?: ContentBlock[];
+  /** 后端判定的付费门禁：true=需付费/看广告解锁。 */
+  locked?: boolean;
   /** 所属试卷 id（模考按试卷组织）。 */
   paperId?: string;
   /** 大问在试卷内的顺序。 */

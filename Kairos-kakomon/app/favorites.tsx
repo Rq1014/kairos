@@ -14,7 +14,7 @@ import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
 import { QuestionCard } from '@/components/study/QuestionCard';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES } from '@/mocks/data';
+import { KAKOMON_QUESTIONS } from '@/mocks/data';
 import { useFavoritesStore } from '@/store/favoritesStore';
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
@@ -65,12 +65,10 @@ export default function FavoritesScreen() {
           </View>
         ) : (
           favorites.map((q) => {
-            const u = KAKOMON_UNIVERSITIES.find((x) => x.id === q.universityId)!;
             return (
               <QuestionCard
                 key={q.id}
                 question={q}
-                university={u}
                 onPress={() => router.push(`/questions/${q.id}` as any)}
               />
             );

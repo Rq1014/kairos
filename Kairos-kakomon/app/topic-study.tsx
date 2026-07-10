@@ -193,14 +193,7 @@ export default function TopicStudyScreen() {
   const pool = useMemo(() => {
     if (!activeEntry) return [];
     const source = poolQuery.data?.items?.length ? poolQuery.data.items : KAKOMON_QUESTIONS;
-    return source.filter((q) => {
-      if (q.universityId !== activeEntry.universityId) return false;
-      if (q.graduateSchool !== activeEntry.gradSchool) return false;
-      if (activeEntry.majorId) {
-        if (q.majorId && q.majorId !== activeEntry.majorId) return false;
-      }
-      return true;
-    });
+    return source;
   }, [activeEntry, poolQuery.data]);
 
   // subject 列表（即该专业的专业课）；dictVersion 驱动字典联网刷新后重算
