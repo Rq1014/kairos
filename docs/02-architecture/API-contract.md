@@ -407,33 +407,33 @@ Query: `universityId`（必填）, `graduateSchool`（必填）
 
 ### 2.13 GET /questions（大问筛选 · 分页）
 
-Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?`, `keyword?`, `page=1`, `pageSize=20`。列表项**不含** `contentBlocks`。
+Query: `universityId?`, `graduateSchool?`, `year?`, `subjectCode?`, `knowledgePoint?`, `keyword?`, `page=1`, `pageSize=20`。列表项**不含** `contentBlocks`；归属由 `question_scope`/`exam_paper_scope`（M:N，V2.0 起）驱动过滤，**响应项不再含** `universityId/graduateSchool/majorId/year`。`locked` 由后端按当前用户目标校+VIP 判定（任一 scope 命中免费范围即 `false`；未登录 `true`；广告解锁由前端叠加）。
 
 ```json
 {
   "code": 0, "message": "ok",
   "data": { "items": [ { "id": "q-todai-2024-math-3", "title": "…", "questionNo": "第3问",
-                         "knowledgePoints": ["线性代数","固有值"] } ],
+                         "subject": "数学", "subjectCode": "math",
+                         "knowledgePoints": ["线性代数","固有值"], "locked": false } ],
             "total": 3, "page": 1, "pageSize": 20, "hasMore": false }
 }
 ```
 
 ### 2.14 GET /questions/{code}（大问详情 · 含 contentBlocks）
 
-> **需登录**（`LoginRequiredInterceptor` 强制）。响应含**当前用户**的 `myVote` / `masteryStatus`。
+> **需登录**（`LoginRequiredInterceptor` 强制）。响应含**当前用户**的 `myVote` / `masteryStatus` / `locked`。归属（校/研究科/专业/年）由 scope 表承载，**详情不返回归属字段**。
 
 ```json
 {
   "code": 0, "message": "ok",
   "data": {
     "id": "q-todai-2024-math-3", "paperId": "p-todai-2024-math",
-    "universityId": "todai", "graduateSchool": "情报理工学系研究科",
-    "year": 2024, "subject": "数学", "questionNo": "第3问", "title": "…",
+    "subject": "数学", "subjectCode": "math", "questionNo": "第3问", "title": "…",
     "contentBlocks": [ { "type": "text", "content": "…" },
                        { "type": "math", "latex": "A v_1 = 2 v_1" } ],
     "knowledgePoints": ["线性代数","固有值"],
     "crowdDifficultyRate": 0.72, "crowdVotes": { "easy": 12, "medium": 38, "hard": 84 },
-    "myVote": "hard", "masteryStatus": "unclear"
+    "myVote": "hard", "masteryStatus": "unclear", "locked": false
   }
 }
 ```
@@ -442,10 +442,11 @@ Query: `universityId?`, `graduateSchool?`, `year?`, `subject?`, `knowledgePoint?
 - `crowdVotes`：三桶票数 `{easy,medium,hard}`。
 - `myVote`：当前用户的难度票（`easy|medium|hard`），未投为 `null`。
 - `masteryStatus`：当前用户的掌握自评（`mastered|unclear|wrong`），未评为 `null`。
+- `locked`：付费门禁，`true`=超出免费范围需付费/看广告。任一归属 scope 命中免费范围即 `false`；未登录 `true`；广告解锁由前端叠加。
 
 ### 2.15 GET /questions/{code}/related（同专题联系）
 
-严格同 **学校 + 研究科 + 专业 + 科目**的其它大问，按共享知识点数降序、年份降序，最多 6 条。公开（`@PublicApi`）。
+与源题**任一归属 scope** 同 学校+研究科+专业+科目 的其它大问（year 不限，跨年即"同专题历年"；源题多归属时取并集），按共享知识点数降序，最多 6 条。公开（`@PublicApi`）。字段来自候选题主 scope。
 
 ```json
 {

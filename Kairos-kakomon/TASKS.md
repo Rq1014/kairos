@@ -1270,3 +1270,31 @@
   - [ ] 掌握 upsert；换设备/清 AsyncStorage 后仍从后端读回
   - [ ] 同专题只返回同 学校+研究科+专业+科目 其它题、知识点重合排序、卡片大学/年份/科目非空
   - [ ] 详情页三级下钻：专题学习→题列表→详情，投票/掌握/同专题三块交互跑通
+
+## 题目/试卷多归属(M:N)模型改造(2026-07-10)
+
+> spec：docs/superpowers/specs/2026-07-09-question-multi-attribution-design.md
+> plan：docs/superpowers/plans/2026-07-09-question-multi-attribution.md
+> 执行：subagent-driven-development（后端 Task3-6 / 前端 Task7-8 两大集成单元各 implementer+reviewer 双门；迁移/种子机械任务直做）
+> ⚠️ 推翻 2026-07-08 单归属标量结论；撤掉 2026-07-09 详情页改造里的 findSameTopic 标量实现（改 join scope）
+
+- [x] V2_0 迁移：question_scope + exam_paper_scope（五元组 校+研究科+专业+科目+year，uk 六列唯一）+ 回填 + 删主表五列/旧索引
+  ✅ 完成于 2026-07-10（95f3ddb；MySQL 执行 DEFERRED 联调）
+- [x] V1_5 种子改多归属：主表去五列 + 写 scope 行 + 跨校散题样例 q-shared-eigen-1（东大 info-sci/cs/math/2024 + 京大 informatics/ii/math/2022）
+  ✅ 完成于 2026-07-10（ba26e4e）
+- [x] 后端 entity/DTO/resultMap 去五列 + QuestionScopeMapper/ExamPaperScopeMapper + 查询改 join scope（findByFilter UNION 散题/挂卷、findSameTopic 按源题 scope、exam_paper findByScope）+ AccessGate 后端算 locked + Controller
+  ✅ 完成于 2026-07-10（f61ba51；./mvnw compile SUCCESS；sonnet reviewer Approved）
+  ✅ review Important 修（5f6bf0a）：findByScope GROUP BY p.id + ORDER BY ps.year 非FD列 → 改 MIN() 避 MySQL8 ONLY_FULL_GROUP_BY 1055；删 AccessGate 未用 import
+- [x] 前端类型去 universityId/graduateSchool/majorId/year + 加 locked；四屏（topic-questions/topic-study/search/详情）去本地过滤/去归属展示/门禁读 locked；mock data 清理
+  ✅ 完成于 2026-07-10（efe00a3；type-check 0/lint 0；sonnet reviewer Approved）
+  ✅ review Minor 修（135a6f2）：删详情页无用 unlockedSchoolYears 订阅
+- [x] API-contract §2.13/§2.14 去归属字段+加 locked，§2.15 同专题改"任一 scope 并集"
+  ✅ 完成于 2026-07-10
+- [ ] 联调环境人工验证（本环境无 MySQL/后端/模拟器，全部运行期项 DEFERRED）：
+  - [ ] 迁移 V2_0 可重放（建表→回填→删列），种子多归属样例落库
+  - [ ] 多归属散题 q-shared-eigen-1 在东大 cs 与 京大 ii 两个专题列表都出现、DISTINCT 无重复
+  - [ ] findByFilter UNION 散题+挂卷不漏不重；findSameTopic 跨源题多 scope 并集正确
+  - [ ] AccessGate locked 三态（免费命中/VIP/未登录）+ 前端广告解锁叠加
+  - [ ] exam_paper findByScope 在 MySQL8 ONLY_FULL_GROUP_BY 下不报 1055、排序确定
+  - [ ] paper 列表/详情按 scope 过滤，exam-session universityId 来自主 scope
+  - [ ] 已知 DEFERRED：university/[id] 与 search BrowseDrillDown 需接后端 getQuestions（当前 mock 本地过滤已移除，空列表有 fallback）
