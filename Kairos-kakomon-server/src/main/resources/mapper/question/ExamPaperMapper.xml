@@ -30,6 +30,6 @@
           AND ps.grad_school_code = #{gradSchoolCode}
           <if test="majorCode != null and majorCode != ''">AND ps.major_code = #{majorCode}</if>
         GROUP BY p.id
-        ORDER BY ps.year DESC, ps.subject_code ASC, p.sort_order DESC, p.id ASC
+        ORDER BY MIN(ps.year) DESC, MIN(ps.subject_code) ASC, p.sort_order DESC, p.id ASC
     </select>
 </mapper>

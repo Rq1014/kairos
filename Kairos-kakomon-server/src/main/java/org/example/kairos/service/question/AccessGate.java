@@ -1,7 +1,6 @@
 package org.example.kairos.service.question;
 
 import org.example.kairos.entity.UserProfileEntity;
-import org.example.kairos.entity.UserTargetSchoolEntity;
 import org.example.kairos.mapper.user.UserProfileMapper;
 import org.example.kairos.mapper.user.UserTargetSchoolMapper;
 import org.springframework.beans.factory.annotation.Autowired;
