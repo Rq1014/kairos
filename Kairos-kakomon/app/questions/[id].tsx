@@ -193,7 +193,6 @@ export default function QuestionDetailScreen() {
 
   // Subscribe so locked related cards refresh after an ad unlock.
   useAdStore((s) => s.unlockedQuestionIds);
-  useAdStore((s) => s.unlockedSchoolYears);
   const unlockQuestion = useAdStore((s) => s.unlockQuestion);
 
   const recordAttempt = useAttemptStore((s) => s.recordAttempt);
