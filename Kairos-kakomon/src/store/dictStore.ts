@@ -113,7 +113,7 @@ export function dictMajors(uni: string, gradCode: string): MajorOption[] {
 }
 
 /** 某大学某研究科某专业下的科目列表（来自后端 tree subjects）。 */
-export function dictSubjects(universityId: string, gradCode: string, majorId: string): { code: string; nameJp: string }[] {
+export function dictSubjects(universityId: string, gradCode: string, majorId: string): { code: string; nameJp: string; questionCount?: number }[] {
   const key = `${universityId}::${gradCode}::${majorId}`;
   return get().subjectsByKey[key] ?? [];
 }

@@ -11,14 +11,12 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { getQuestions } from '@/api/questions';
 import { useColors } from '@/constants/colors';
 import type { ThemeColors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { Spacing } from '@/constants/spacing';
 import { Icon } from '@/components/ui';
-import { KAKOMON_QUESTIONS, KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
+import { KAKOMON_UNIVERSITIES, DEMO_USER } from '@/mocks/data';
 import { dictGradName, dictGrads, dictMajors, dictSubjects, useDictStore } from '@/store/dictStore';
 import { useAuthStore } from '@/store/authStore';
 import { useBrowseSchoolsStore } from '@/store/browseSchoolsStore';
@@ -180,42 +178,16 @@ export default function TopicStudyScreen() {
     setActiveKey(key);
   }
 
-  // 当前条目的题池
-  const poolQuery = useQuery({
-    queryKey: ['questions', 'pool', activeEntry?.universityId ?? '', activeEntry?.gradSchool ?? ''],
-    queryFn: () => getQuestions({
-      universityIds: activeEntry ? [activeEntry.universityId] : undefined,
-      pageSize: 200,
-    }),
-    enabled: !!activeEntry,
-  });
-
-  const pool = useMemo(() => {
-    if (!activeEntry) return [];
-    const source = poolQuery.data?.items?.length ? poolQuery.data.items : KAKOMON_QUESTIONS;
-    return source;
-  }, [activeEntry, poolQuery.data]);
-
   // subject 列表（即该专业的专业课）；dictVersion 驱动字典联网刷新后重算
   const subjects = useMemo(() => {
     if (!activeEntry) return [];
     // Reference dictVersion so the memo recomputes when dict hydrates from network
     void dictVersion;
-    const dictList = dictSubjects(activeEntry.universityId, activeEntry.gradSchool, activeEntry.majorId ?? '');
-    const countByCode = new Map<string, number>();
-    const nameByCode = new Map<string, string>();
-    pool.forEach((q) => {
-      countByCode.set(q.subjectCode, (countByCode.get(q.subjectCode) ?? 0) + 1);
-      if (!nameByCode.has(q.subjectCode)) nameByCode.set(q.subjectCode, q.subject);
-    });
-    if (dictList.length > 0) {
-      return dictList.map((s) => ({ code: s.code, name: s.nameJp, count: countByCode.get(s.code) ?? 0 }));
-    }
-    // 兜底：字典无数据时回退扫题池，展示名用题目自带的 subject（日文名）
-    return [...countByCode.entries()]
-      .map(([code, count]) => ({ code, name: nameByCode.get(code) ?? code, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [activeEntry, pool, dictVersion]);
+    return dictSubjects(activeEntry.universityId, activeEntry.gradSchool, activeEntry.majorId ?? '')
+      .map((s) => ({ code: s.code, name: s.nameJp, count: s.questionCount ?? 0 }));
+  }, [activeEntry, dictVersion]);
+
+  const totalCount = useMemo(() => subjects.reduce((n, s) => n + s.count, 0), [subjects]);
 
   function onSubjectPress(subjectCode: string) {
     if (!activeEntry) return;
@@ -381,7 +353,7 @@ export default function TopicStudyScreen() {
               <Text style={styles.rightGrad}>
                 {dictGradName(activeEntry.universityId, activeEntry.gradSchool)}{activeEntry.majorLabel ? ` · ${activeEntry.majorLabel}` : ''}
               </Text>
-              <Text style={styles.rightSub}>{pool.length} 道题 · {subjects.length} 门专业课</Text>
+              <Text style={styles.rightSub}>{totalCount} 道题 · {subjects.length} 门专业课</Text>
 
               {subjects.length === 0 ? (
                 <View style={styles.empty}>

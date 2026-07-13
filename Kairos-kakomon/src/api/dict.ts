@@ -7,7 +7,7 @@ interface RawMajorNode {
   label: string;
   short?: string;
   desc?: string;
-  subjects?: { code: string; nameJp: string }[];
+  subjects?: { code: string; nameJp: string; questionCount?: number }[];
 }
 interface RawGradNode {
   id: string;
@@ -29,7 +29,7 @@ export interface NormalizedDict {
   gradsByUni: Record<string, string[]>;      // ≙ UNI_GRADS
   majorsByKey: Record<string, MajorOption[]>; // ≙ UNI_MAJORS，键 `uni::gradCode`
   gradNameMap: Record<string, string>;        // ≙ GRAD_SCHOOL_NAMES，键 `uni::gradCode`
-  subjectsByKey: Record<string, { code: string; nameJp: string }[]>; // 键 `uni::gradCode::majorId`
+  subjectsByKey: Record<string, { code: string; nameJp: string; questionCount?: number }[]>; // 键 `uni::gradCode::majorId`
   version: number;
 }
 
@@ -38,7 +38,7 @@ export function normalizeTree(raw: RawTree): NormalizedDict {
   const gradsByUni: Record<string, string[]> = {};
   const majorsByKey: Record<string, MajorOption[]> = {};
   const gradNameMap: Record<string, string> = {};
-  const subjectsByKey: Record<string, { code: string; nameJp: string }[]> = {};
+  const subjectsByKey: Record<string, { code: string; nameJp: string; questionCount?: number }[]> = {};
 
   for (const uni of raw.universities ?? []) {
     if (!uni || !uni.id) continue;
