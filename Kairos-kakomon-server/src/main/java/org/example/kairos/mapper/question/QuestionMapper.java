@@ -36,11 +36,12 @@ public interface QuestionMapper {
                        @Param("knowledgePoint") String knowledgePoint,
                        @Param("keyword") String keyword);
 
-    /** 某 (校+研究科+专业+科目) 下的题数(散题+挂卷题, 去重) */
+    /** 某 (校+研究科+专业+科目) 下的题数(散题+挂卷题, 去重)。year 恒传 null(scopedCodes 的 year <if> 需要该键存在)。 */
     long countByScope4(@Param("universityCode") String universityCode,
                        @Param("gradSchoolCode") String gradSchoolCode,
                        @Param("majorCode") String majorCode,
-                       @Param("subjectCode") String subjectCode);
+                       @Param("subjectCode") String subjectCode,
+                       @Param("year") Integer year);
 
     /** 查某题的知识点列表 */
     List<String> findKnowledgePoints(@Param("questionCode") String questionCode);

@@ -144,7 +144,7 @@ public class DictionaryServiceImpl implements DictionaryService {
             sn.setCode(msub.getSubjectCode());
             sn.setNameJp(subjectNameByCode.getOrDefault(msub.getSubjectCode(), msub.getSubjectCode()));
             sn.setQuestionCount((int) questionMapper.countByScope4(
-                    msub.getUniversityCode(), msub.getGradSchoolCode(), msub.getMajorCode(), msub.getSubjectCode()));
+                    msub.getUniversityCode(), msub.getGradSchoolCode(), msub.getMajorCode(), msub.getSubjectCode(), null));
             subjectsByMajorKey.computeIfAbsent(key, k -> new ArrayList<>()).add(sn);
         }
 
