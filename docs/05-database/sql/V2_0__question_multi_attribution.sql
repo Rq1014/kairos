@@ -63,7 +63,7 @@ ALTER TABLE `question`
     DROP COLUMN `subject_code`;
 
 ALTER TABLE `exam_paper`
-    DROP KEY `idx_paper_scope`,
+    DROP KEY `uk_paper_scope`,
     DROP KEY `idx_paper_filter`,
     DROP COLUMN `university_code`,
     DROP COLUMN `grad_school_code`,
