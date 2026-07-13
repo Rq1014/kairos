@@ -60,4 +60,5 @@ INSERT INTO `subject` (`code`, `name_cn`, `name_jp`, `sort_order`) VALUES
 -- -------------------------------------------------------------
 INSERT INTO `major_subject` (`university_code`, `grad_school_code`, `major_code`, `subject_code`, `sort_order`) VALUES
   ('todai', 'info-sci', 'cs', 'math',      100),
-  ('todai', 'info-sci', 'cs', 'algorithm',  90);
+  ('todai', 'info-sci', 'cs', 'algorithm',  90),
+  ('kyodai', 'informatics', 'ii', 'math',   80);
