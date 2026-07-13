@@ -98,6 +98,10 @@
         <include refid="postFilter"/>
     </select>
 
+    <select id="countByScope4" resultType="long">
+        SELECT COUNT(*) FROM ( <include refid="scopedCodes"/> ) sc
+    </select>
+
     <select id="findKnowledgePoints" resultType="string">
         SELECT knowledge_point FROM question_knowledge_point
         WHERE question_code = #{questionCode} ORDER BY id ASC

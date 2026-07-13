@@ -47,6 +47,7 @@ public class DictionaryServiceImpl implements DictionaryService {
     @Autowired private MajorMapper majorMapper;
     @Autowired private SubjectMapper subjectMapper;
     @Autowired private MajorSubjectMapper majorSubjectMapper;
+    @Autowired private org.example.kairos.mapper.question.QuestionMapper questionMapper;
     @Autowired private StringRedisTemplate redis;
 
     @Override
@@ -142,6 +143,8 @@ public class DictionaryServiceImpl implements DictionaryService {
             UniversityTreeResponse.SubjectNode sn = new UniversityTreeResponse.SubjectNode();
             sn.setCode(msub.getSubjectCode());
             sn.setNameJp(subjectNameByCode.getOrDefault(msub.getSubjectCode(), msub.getSubjectCode()));
+            sn.setQuestionCount((int) questionMapper.countByScope4(
+                    msub.getUniversityCode(), msub.getGradSchoolCode(), msub.getMajorCode(), msub.getSubjectCode()));
             subjectsByMajorKey.computeIfAbsent(key, k -> new ArrayList<>()).add(sn);
         }
 

@@ -105,9 +105,12 @@ public class UniversityTreeResponse {
     public static class SubjectNode {
         private String code;
         private String nameJp;
+        private Integer questionCount;
         public String getCode() { return code; }
         public void setCode(String code) { this.code = code; }
         public String getNameJp() { return nameJp; }
         public void setNameJp(String nameJp) { this.nameJp = nameJp; }
+        public Integer getQuestionCount() { return questionCount; }
+        public void setQuestionCount(Integer questionCount) { this.questionCount = questionCount; }
     }
 }
