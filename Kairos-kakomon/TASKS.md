@@ -1321,3 +1321,23 @@
   - [ ] q-shared-eigen-1 的 kyodai scope（kyodai/informatics/ii/math）回填出正确 major_subject_id
   - [ ] V2_0 迁移不再因 uk_paper_scope 报 1091
   - [ ] MajorSubjectGuard.resolveId 命中返 id、未命中抛 10605
+
+## 专题学习幻影科目/题目修复(2026-07-13)
+
+> spec：docs/superpowers/specs/2026-07-13-topic-study-phantom-subject-fix-design.md
+> plan：docs/superpowers/plans/2026-07-13-topic-study-phantom-subject-fix.md
+> 执行：subagent-driven-development（后端 Task1 implementer+reviewer；前端 Task2+3 一个集成单元 implementer+reviewer；Task4 直做）
+> 根因：topic-study 题池空时兜底整个 KAKOMON_QUESTIONS mock + 科目列表扫题池兜底 → 字典/后端无科目的组合仍显幻影"数学"，详情走真后端故点进去空
+
+- [x] 后端 tree SubjectNode 带 questionCount（QuestionMapper.countByScope4 复用 scopedCodes 按四元 count 散题+挂卷去重；DictionaryServiceImpl 逐科目填充）
+  ✅ 完成于 2026-07-13（14f5aaf；./mvnw compile SUCCESS；sonnet reviewer Approved，UNION 去重计数正确）
+- [x] 前端 dict.ts/dictStore.ts 透传 questionCount（DictState extends NormalizedDict 自动继承，dictSubjects 返回类型加字段）
+  ✅ 完成于 2026-07-13（845d1a8）
+- [x] topic-study 科目只走字典：删 poolQuery/pool/扫题池兜底，subjects 纯 dictSubjects().map(count=questionCount)，头部总数改 count 之和，移除 useQuery/getQuestions/KAKOMON_QUESTIONS import（保留 KAKOMON_UNIVERSITIES/DEMO_USER）
+  ✅ 完成于 2026-07-13（845d1a8；type-check 0/lint 0；reviewer 确认幻影源全删净）
+- [ ] 联调环境人工验证（本环境无 MySQL/后端/模拟器，全部运行期项 DEFERRED）：
+  - [ ] kyodai/engineering/ee（字典无科目）专题学习科目列表为空 —— 无幻影"数学"
+  - [ ] todai/info-sci/cs 显示 math/algorithm + 真实 count（tree questionCount）
+  - [ ] 有题科目点进详情有题，count 与详情条数一致
+  - [ ] 断网/冷启（dict 未 hydrate）科目列表不崩（空或 seed）
+  - [ ] tree 接口每 SubjectNode JSON 带 questionCount
