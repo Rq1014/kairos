@@ -1298,3 +1298,26 @@
   - [ ] exam_paper findByScope 在 MySQL8 ONLY_FULL_GROUP_BY 下不报 1055、排序确定
   - [ ] paper 列表/详情按 scope 过滤，exam-session universityId 来自主 scope
   - [ ] 已知 DEFERRED：university/[id] 与 search BrowseDrillDown 需接后端 getQuestions（当前 mock 本地过滤已移除，空列表有 fallback）
+
+## 归属⊆科目字典一致性(scope↔major_subject)(2026-07-13)
+
+> spec：docs/superpowers/specs/2026-07-13-scope-major-subject-consistency-design.md
+> plan：docs/superpowers/plans/2026-07-13-scope-major-subject-consistency.md
+> 执行：subagent-driven-development（DB/文档机械任务直做，后端 Guard 组件 compile 门禁）
+> 不变式：question_scope/exam_paper_scope 的 (校+研究科+专业+科目) 必须是 major_subject 子集才展示
+
+- [x] 修 V2_0 exam_paper DROP KEY uk_paper_scope→idx_paper_scope（原名不存在会报 1091）
+  ✅ 完成于 2026-07-13（dbea85e）
+- [x] V1_8 补 major_subject 行 kyodai/informatics/ii/math（支撑 q-shared-eigen-1 跨校归属合法）
+  ✅ 完成于 2026-07-13（7080683）
+- [x] V2_2 迁移：scope 加 major_subject_id 外键列 + 由四列 join 字典回填 + 收紧 NOT NULL/FK；README 加 V2_2 顺序
+  ✅ 完成于 2026-07-13（6456568；四列冗余保留，写入由 id 反查填）
+- [x] MajorSubjectGuard 写入校验组件（resolveId 查不到抛 10605）+ MajorSubjectMapper.findId + ResultCode MAJOR_SUBJECT_NOT_FOUND(10605)
+  ✅ 完成于 2026-07-13（8bd981c；./mvnw compile SUCCESS；现无录题 API，组件备用）
+- [ ] 联调环境人工验证（本环境无 MySQL，全部运行期项 DEFERRED）：
+  - [ ] 迁移顺序 V1_8(含新字典行) → V2_0(修 bug 后) → V2_1 → V2_2
+  - [ ] V2_2 回填后 question_scope/exam_paper_scope 无 major_subject_id NULL（有 NULL=孤儿，须先补字典再重跑）
+  - [ ] FK fk_qs_ms/fk_ps_ms 生效：插引用不存在 major_subject 的 scope 被拒
+  - [ ] q-shared-eigen-1 的 kyodai scope（kyodai/informatics/ii/math）回填出正确 major_subject_id
+  - [ ] V2_0 迁移不再因 uk_paper_scope 报 1091
+  - [ ] MajorSubjectGuard.resolveId 命中返 id、未命中抛 10605
