@@ -68,8 +68,9 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
         var names = subjectNameMap();
         UserSession session = UserContextHolder.get();
         Long currentUserId = session != null ? session.getUserId() : null;
+        AccessGate.GateContext gateCtx = accessGate.resolveContext(currentUserId);
         List<QuestionListItemResponse> items = new ArrayList<>();
-        for (QuestionEntity q : rows) items.add(toListItem(q, names, currentUserId));
+        for (QuestionEntity q : rows) items.add(toListItem(q, names, gateCtx));
         QuestionListResponse resp = new QuestionListResponse();
         resp.setItems(items);
         resp.setTotal(total);
@@ -135,6 +136,30 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
 
     // ---- private helpers ----
 
+    /** Scope fetch result: subject code + scope keys derived from a SINGLE DB query. */
+    private record ScopeResult(String subjectCode, List<AccessGate.ScopeKey> keys) {}
+
+    /**
+     * Fetches the scope rows for a question ONCE and derives both the primary subject code
+     * and the AccessGate ScopeKey list from the same result (eliminates the previous 2-query duplication).
+     */
+    private ScopeResult fetchScopeOnce(QuestionEntity q) {
+        List<AccessGate.ScopeKey> keys = new ArrayList<>();
+        String subjectCode = null;
+        if (q.getPaperCode() == null) {
+            var list = questionScopeMapper.findByQuestionCode(q.getCode());
+            if (!list.isEmpty()) subjectCode = list.get(0).getSubjectCode();
+            for (var s : list)
+                keys.add(new AccessGate.ScopeKey(s.getUniversityCode(), s.getGradSchoolCode(), s.getYear()));
+        } else {
+            var list = examPaperScopeMapper.findByPaperCode(q.getPaperCode());
+            if (!list.isEmpty()) subjectCode = list.get(0).getSubjectCode();
+            for (var ps : list)
+                keys.add(new AccessGate.ScopeKey(ps.getUniversityCode(), ps.getGradSchoolCode(), ps.getYear()));
+        }
+        return new ScopeResult(subjectCode, keys);
+    }
+
     private List<AccessGate.ScopeKey> scopeKeysOf(QuestionEntity q) {
         List<AccessGate.ScopeKey> keys = new ArrayList<>();
         if (q.getPaperCode() == null) {
@@ -174,8 +199,11 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
         return s;
     }
 
-    private QuestionListItemResponse toListItem(QuestionEntity q, Map<String, String> names, Long currentUserId) {
-        String sc = primarySubjectCode(q);
+    private QuestionListItemResponse toListItem(QuestionEntity q, Map<String, String> names, AccessGate.GateContext gateCtx) {
+        // Fetch scope rows ONCE per question — derive both subjectCode and ScopeKeys from the same result
+        var scopeResult = fetchScopeOnce(q);
+        String sc = scopeResult.subjectCode();
+        List<AccessGate.ScopeKey> keys = scopeResult.keys();
         QuestionListItemResponse r = new QuestionListItemResponse();
         r.setId(q.getCode());
         r.setPaperId(q.getPaperCode());
@@ -187,7 +215,7 @@ public class QuestionQueryServiceImpl implements QuestionQueryService {
         r.setDifficultyLabel(q.getDifficultyLabel());
         r.setDifficultyLevel(q.getDifficultyLevel());
         r.setKnowledgePoints(questionMapper.findKnowledgePoints(q.getCode()));
-        r.setLocked(accessGate.isLocked(currentUserId, scopeKeysOf(q)));
+        r.setLocked(accessGate.isLocked(gateCtx, keys));
         return r;
     }
 
