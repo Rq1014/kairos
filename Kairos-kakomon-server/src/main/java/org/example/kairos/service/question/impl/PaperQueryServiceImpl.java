@@ -6,6 +6,7 @@ import org.example.kairos.common.ResultCode;
 import org.example.kairos.common.exception.BizException;
 import org.example.kairos.entity.ExamPaperEntity;
 import org.example.kairos.entity.ExamPaperScopeEntity;
+import org.example.kairos.model.bo.PaperScopeRow;
 import org.example.kairos.entity.QuestionEntity;
 import org.example.kairos.entity.SubjectEntity;
 import org.example.kairos.mapper.dict.SubjectMapper;
@@ -43,20 +44,20 @@ public class PaperQueryServiceImpl implements PaperQueryService {
 
     @Override
     public List<PaperListItemResponse> listByScope(String universityId, String graduateSchool, String majorId) {
-        List<ExamPaperEntity> papers = paperMapper.findByScope(universityId, graduateSchool, majorId);
+        List<PaperScopeRow> rows = paperMapper.findScopeRowsByScope(universityId, graduateSchool, majorId);
         var names = subjectNameMap();
         List<PaperListItemResponse> out = new ArrayList<>();
-        for (ExamPaperEntity p : papers) {
-            ExamPaperScopeEntity primary = primaryScope(p.getCode());
+        for (PaperScopeRow row : rows) {
             PaperListItemResponse r = new PaperListItemResponse();
-            r.setId(p.getCode());
-            r.setYear(primary != null ? primary.getYear() : null);
-            r.setSubjectCode(primary != null ? primary.getSubjectCode() : null);
-            r.setSubject(primary != null ? names.getOrDefault(primary.getSubjectCode(), primary.getSubjectCode()) : null);
-            r.setTitle(p.getTitle());
-            r.setDurationMinutes(p.getDurationMinutes());
-            r.setSelectRule(parseSelectRule(p.getSelectRule()));
-            r.setQuestionCount(questionMapper.findByPaperCode(p.getCode()).size());
+            r.setId(row.getCode());
+            // 用"匹配到的那条 scope"的年份/科目, 而非任意主 scope —— 多归属试卷落到它归属的每个抽屉
+            r.setYear(row.getScopeYear());
+            r.setSubjectCode(row.getScopeSubjectCode());
+            r.setSubject(names.getOrDefault(row.getScopeSubjectCode(), row.getScopeSubjectCode()));
+            r.setTitle(row.getTitle());
+            r.setDurationMinutes(row.getDurationMinutes());
+            r.setSelectRule(parseSelectRule(row.getSelectRule()));
+            r.setQuestionCount(questionMapper.findByPaperCode(row.getCode()).size());
             out.add(r);
         }
         return out;
