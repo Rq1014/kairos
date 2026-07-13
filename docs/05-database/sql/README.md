@@ -15,6 +15,7 @@
 | 9 | [`V1_9__question_user_dimension.sql`](./V1_9__question_user_dimension.sql) | 题目用户维度：难度投票 `question_difficulty_vote` + 掌握自评 `question_user_mastery` |
 | 10 | [`V2_0__question_multi_attribution.sql`](./V2_0__question_multi_attribution.sql) | 题目/试卷多归属（M:N）：建 `question_scope`/`exam_paper_scope` + 回填 + 删主表五列 |
 | 11 | [`V2_1__seed_questions.sql`](./V2_1__seed_questions.sql) | 灌入题目 / 试卷示例数据（多归属版，可选；**须在 V2_0 之后**）|
+| 12 | [`V2_2__scope_major_subject_fk.sql`](./V2_2__scope_major_subject_fk.sql) | scope 归属加 `major_subject_id` 外键 + 回填（归属⊆字典，**须在 V2_1 之后**）|
 
 > **⚠️ 种子顺序**：`V2_1__seed_questions.sql`（原 `V1_5`）已改写为 V2.0 后的 schema（主表无五列、归属写 scope 表），故**必须在 V2_0 之后执行**——从零初始化时不要在 V1_4 后立即灌种子。
 
@@ -33,6 +34,7 @@ mysql -uroot -p kakomon < V1_8__subject_dict.sql
 mysql -uroot -p kakomon < V1_9__question_user_dimension.sql
 mysql -uroot -p kakomon < V2_0__question_multi_attribution.sql
 mysql -uroot -p kakomon < V2_1__seed_questions.sql
+mysql -uroot -p kakomon < V2_2__scope_major_subject_fk.sql
 ```
 
 > **V1_0 已就地带完整列注释** —— 从零初始化的库无需执行 V1_7。
