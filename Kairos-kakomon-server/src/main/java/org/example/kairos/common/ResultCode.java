@@ -94,7 +94,9 @@ public enum ResultCode {
     /** 难度投票值非法(仅 easy/medium/hard) */
     INVALID_DIFFICULTY_VOTE(10603, "难度投票值不合法"),
     /** 掌握状态值非法(仅 mastered/unclear/wrong) */
-    INVALID_MASTERY_STATUS(10604, "掌握状态值不合法");
+    INVALID_MASTERY_STATUS(10604, "掌握状态值不合法"),
+    /** 专业-科目组合在 major_subject 字典中不存在 */
+    MAJOR_SUBJECT_NOT_FOUND(10605, "专业-科目组合不存在");
 
     private final int code;
     private final String message;

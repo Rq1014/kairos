@@ -16,4 +16,13 @@
     <select id="findAll" resultMap="MajorSubjectMap">
         SELECT * FROM major_subject ORDER BY sort_order DESC, id ASC
     </select>
+
+    <select id="findId" resultType="java.lang.Long">
+        SELECT id FROM major_subject
+        WHERE university_code = #{universityCode}
+          AND grad_school_code = #{gradSchoolCode}
+          AND major_code = #{majorCode}
+          AND subject_code = #{subjectCode}
+        LIMIT 1
+    </select>
 </mapper>
