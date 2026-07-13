@@ -77,9 +77,9 @@ CREATE TABLE `question_scope` (
 
 ### 3.5 种子
 
-- `V1_5`（题种子）改：`INSERT INTO question`（不含五列）+ 对每散题 `INSERT INTO question_scope` 一行（承接原五列值）。为演示多归属，给至少一道散题**加第二条 scope**（跨校/跨专业各一例）。
-- `exam_paper` 种子（在 V1_5 或相应脚本）：同理插主表（无五列）+ `exam_paper_scope` 行。
-- `V1_5` 头部注释更新，说明与 `question_scope`/`exam_paper_scope` 的关系。
+- `V2_1`（题种子，原 `V1_5` 改写并**重编号到 V2_0 之后**）：`INSERT INTO question`（不含五列）+ 对每散题 `INSERT INTO question_scope` 一行（承接原五列值）。为演示多归属，给至少一道散题**加第二条 scope**（跨校/跨专业各一例）。
+- `exam_paper` 种子（在 `V2_1`）：同理插主表（无五列）+ `exam_paper_scope` 行。
+- `V2_1` 头部注释说明与 `question_scope`/`exam_paper_scope` 的关系，并标注须在 V2_0 之后执行（否则 scope 表不存在、主表仍有五列 NOT NULL 会失败）。
 
 ## 4. 后端查询改造
 

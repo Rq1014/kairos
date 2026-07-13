@@ -1291,7 +1291,7 @@
 - [x] API-contract §2.13/§2.14 去归属字段+加 locked，§2.15 同专题改"任一 scope 并集"
   ✅ 完成于 2026-07-10
 - [ ] 联调环境人工验证（本环境无 MySQL/后端/模拟器，全部运行期项 DEFERRED）：
-  - [ ] 迁移 V2_0 可重放（建表→回填→删列），种子多归属样例落库
+  - [ ] 迁移执行顺序 V1_9 → V2_0 → V2_1（种子在 V2_0 之后，forward-only 非幂等：重跑需重建库）；种子多归属样例落库
   - [ ] 多归属散题 q-shared-eigen-1 在东大 cs 与 京大 ii 两个专题列表都出现、DISTINCT 无重复
   - [ ] findByFilter UNION 散题+挂卷不漏不重；findSameTopic 跨源题多 scope 并集正确
   - [ ] AccessGate locked 三态（免费命中/VIP/未登录）+ 前端广告解锁叠加

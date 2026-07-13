@@ -1,7 +1,9 @@
 -- =============================================================
---  Kairos-kakomon 迁移脚本 V1.5 — 题目/试卷样例数据(东大 2024 数学整卷)
+--  Kairos-kakomon 迁移脚本 V2.1 — 题目/试卷样例数据(多归属版)
 --  对应前端 src/mocks/data.ts 的 KAKOMON_PAPERS / q-todai-2024-math-*
---  仅用于本地 / 联调环境。前置：V1_4__questions_schema.sql
+--  仅用于本地 / 联调环境。前置：V2_0__question_multi_attribution.sql(scope 表 + 主表已去五列)
+--  注意：本脚本按 V2_0 后的 schema 写(主表无五列, 归属写 question_scope/exam_paper_scope),
+--        故必须在 V2_0 之后执行(见 README 顺序)。
 -- =============================================================
 
 USE `kakomon`;
