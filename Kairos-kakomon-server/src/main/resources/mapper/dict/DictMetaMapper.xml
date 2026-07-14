@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.kairos.mapper.dict.DictMetaMapper">
+
+    <!--
+      内容派生版本号 = 时间戳分量 + 行数分量。
+      · 时间戳分量: 跨 tree 相关 8 表取 MAX(updated_at 或 created_at) 的 epoch 秒, 减 2020-01-01 基线(防 int 溢出, ~61 年余量)。
+        覆盖 增/改; 软删(status)是 UPDATE 会改 updated_at, 也覆盖。question_scope/exam_paper_scope 无 updated_at, 用 created_at。
+      · 行数分量: 各表 COUNT(*) 之和, 覆盖硬删(尤其 major_subject 无 status/软删, 删行仅靠 COUNT 变化体现)。
+      结果落在 int 范围(当前约 2.06 亿)。FE 只做相等性判断, 不假设单调。
+    -->
+    <select id="computeDictVersion" resultType="long">
+        SELECT
+            (GREATEST(
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(updated_at)) FROM university), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(updated_at)) FROM grad_school), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(updated_at)) FROM major), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(updated_at)) FROM major_subject), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(updated_at)) FROM subject), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(updated_at)) FROM question), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(created_at)) FROM question_scope), 0),
+                COALESCE((SELECT UNIX_TIMESTAMP(MAX(created_at)) FROM exam_paper_scope), 0)
+            ) - UNIX_TIMESTAMP('2020-01-01 00:00:00'))
+            +
+            (COALESCE((SELECT COUNT(*) FROM university), 0)
+                + COALESCE((SELECT COUNT(*) FROM grad_school), 0)
+                + COALESCE((SELECT COUNT(*) FROM major), 0)
+                + COALESCE((SELECT COUNT(*) FROM major_subject), 0)
+                + COALESCE((SELECT COUNT(*) FROM subject), 0)
+                + COALESCE((SELECT COUNT(*) FROM question), 0)
+                + COALESCE((SELECT COUNT(*) FROM question_scope), 0)
+                + COALESCE((SELECT COUNT(*) FROM exam_paper_scope), 0)) AS dict_version
+    </select>
+</mapper>

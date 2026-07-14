@@ -1,7 +1,6 @@
 package org.example.kairos.service.dict.impl;
 
 import org.example.kairos.common.ResultCode;
-import org.example.kairos.common.constant.CacheKeys;
 import org.example.kairos.common.exception.BizException;
 import org.example.kairos.entity.GradSchoolEntity;
 import org.example.kairos.entity.MajorEntity;
@@ -11,6 +10,7 @@ import org.example.kairos.entity.UniversityEntity;
 import org.example.kairos.mapper.dict.GradSchoolMapper;
 import org.example.kairos.mapper.dict.MajorMapper;
 import org.example.kairos.mapper.dict.MajorSubjectMapper;
+import org.example.kairos.mapper.dict.DictMetaMapper;
 import org.example.kairos.mapper.dict.SubjectMapper;
 import org.example.kairos.mapper.dict.UniversityMapper;
 import org.example.kairos.model.response.dict.GradSchoolResponse;
@@ -21,7 +21,6 @@ import org.example.kairos.model.response.dict.UniversityResponse;
 import org.example.kairos.model.response.dict.UniversityTreeResponse;
 import org.example.kairos.service.dict.DictionaryService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -36,7 +35,7 @@ import java.util.List;
  *   <li>大学/研究科/专业三级结构,通过 universityId/gradSchoolId 关联</li>
  *   <li>对外暴露 code(而非自增 ID),便于版本演进</li>
  *   <li>major.subjects 字段已废弃,subjects 数据从 major_subject 关联表获取</li>
- *   <li>版本号通过 Redis 单独存储,字典数据更新时递增,客户端据此重拉</li>
+ *   <li>版本号由内容派生(tree 相关表 MAX(updated_at/created_at) + 各表行数),数据一变即变,客户端据此重拉</li>
  * </ul>
  */
 @Service
@@ -48,16 +47,11 @@ public class DictionaryServiceImpl implements DictionaryService {
     @Autowired private SubjectMapper subjectMapper;
     @Autowired private MajorSubjectMapper majorSubjectMapper;
     @Autowired private org.example.kairos.mapper.question.QuestionMapper questionMapper;
-    @Autowired private StringRedisTemplate redis;
+    @Autowired private DictMetaMapper dictMetaMapper;
 
     @Override
     public int getVersion() {
-        String v = redis.opsForValue().get(CacheKeys.DICT_VERSION);
-        if (v == null) {
-            redis.opsForValue().setIfAbsent(CacheKeys.DICT_VERSION, "1");
-            return 1;
-        }
-        try { return Integer.parseInt(v); } catch (NumberFormatException e) { return 1; }
+        return (int) dictMetaMapper.computeDictVersion();
     }
 
     @Override

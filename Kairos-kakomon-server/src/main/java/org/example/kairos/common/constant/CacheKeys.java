@@ -65,8 +65,6 @@ public final class CacheKeys {
         return String.format("ratelimit:%s:%s", ip, uri);
     }
 
-    /** 字典版本号 Key,字典数据更新时该值递增,客户端据此判断是否需要重新拉取 */
-    public static final String DICT_VERSION = "dict:meta:version";
     /** 大学列表缓存,带版本号实现版本切换时自然失效 */
     public static String dictUniList(int ver) { return "dict:uni:list:v" + ver; }
     /** 单个大学详情缓存 */
